@@ -7,6 +7,10 @@ Um laboratório, uma palavra secreta e um impostor. Jogo de dedução social par
 - **Frontend:** React, TypeScript, Vite, Tailwind e Socket.IO Client, no GitHub Pages.
 - **Backend:** Node.js, Express e Socket.IO, em uma única instância do Render.
 
+![Impostor TI com 24 participantes simulados e seus nomes](docs/preview.png)
+
+**Validação:** 27 testes aprovados e sessão pública de 30 minutos e 21 segundos com 24 clientes simulados, professor e telão, sem falhas detectadas. Resultados e limites em [docs/VALIDATION.md](docs/VALIDATION.md).
+
 ## Como jogar
 
 1. O professor escolhe **Sou professor**, cria a sala e compartilha o código de seis caracteres.

@@ -1,0 +1,19 @@
+{
+  "url": "https://impostor-ti-api.onrender.com",
+  "requestedMinutes": 30,
+  "startedAt": "2026-10-17T20:57:24.370Z",
+  "clients": 26,
+  "students": 24,
+  "errors": [],
+  "completed": true,
+  "finishedAt": "2026-10-17T21:27:45.416Z",
+  "durationSeconds": 1821,
+  "games": 79,
+  "rounds": 158,
+  "reconnections": 27,
+  "eventsReceived": 268644,
+  "commands": 10006,
+  "p50Ms": 161,
+  "p95Ms": 411,
+  "maxMs": 1546
+}

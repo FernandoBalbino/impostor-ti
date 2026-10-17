@@ -24,3 +24,5 @@ Produzida com a ferramenta integrada de geração de imagens. Os arquivos finais
 - Artes adicionais de pasta amarela e sinal Wi-Fi azul seguem a mesma direção de pixel art, fundo transparente e sem texto.
 
 O limite de 30 novas imagens do catálogo é respeitado. Os personagens e o laboratório são recursos próprios de cenário e identidade visual.
+
+O cenário e o atlas são servidos em WebP sem perdas. A conversão preservou todos os pixels visíveis e reduziu os dois arquivos de 3.067 KB para 2.496 KB (aproximadamente 19%). Os PNG originais permanecem versionados como fontes da arte. Os prompts completos estão em `IMAGE-PROMPTS.md`.

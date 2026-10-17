@@ -175,7 +175,7 @@ strong {
   z-index: -2;
 }
 .scene {
-  background: url('../public/assets/art/classroom.png') center/cover no-repeat;
+  background: url('../public/assets/art/classroom.webp') center/cover no-repeat;
   image-rendering: pixelated;
 }
 .scene-shade {
@@ -296,7 +296,7 @@ strong {
   width: 44px;
   height: 52px;
   flex-shrink: 0;
-  background-image: url('../public/assets/art/avatars.png');
+  background-image: url('../public/assets/art/avatars.webp');
   background-size: 400% 600%;
   background-repeat: no-repeat;
   image-rendering: pixelated;

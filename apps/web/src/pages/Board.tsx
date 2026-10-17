@@ -46,9 +46,7 @@ const PlayerTile = memo(function PlayerTile({
     : !player.alive
       ? 'Eliminado'
       : phase === 'VOTING'
-        ? player.voted
-          ? 'Voto confirmado'
-          : 'Pensando no voto…'
+        ? (player.clue ?? 'Sem dica')
         : (player.clue ??
           (['CLUES', 'ROLE_REVEAL'].includes(phase)
             ? ''
@@ -71,6 +69,11 @@ const PlayerTile = memo(function PlayerTile({
         <span className="player-name" title={player.name}>
           {player.name}
           {isMe && <small> você</small>}
+          {phase === 'VOTING' && player.voted && (
+            <span className="voted-marker" title="Voto confirmado">
+              <CheckIcon />
+            </span>
+          )}
           <i
             className={`status-dot ${player.online ? 'online' : ''}`}
             title={player.online ? 'Conectado' : 'Desconectado'}
@@ -104,8 +107,8 @@ function ItemImage({ word }: { word: Word }) {
       src={asset(word.imagem)}
       alt={word.nome}
       onError={(e) => {
-        e.currentTarget.onerror = null;
-        e.currentTarget.src = asset('assets/items/fallback.svg');
+        if (!e.currentTarget.src.endsWith('/fallback.svg'))
+          e.currentTarget.src = asset('assets/items/fallback.svg');
       }}
     />
   );
@@ -135,7 +138,9 @@ function SecretCard() {
       <section
         className={`secret-card result-card ${result.winner === 'impostor' ? 'impostor-wins' : ''}`}
       >
-        <span className="card-overline">MISTÉRIO RESOLVIDO</span>
+        <span className="card-overline">
+          {result.winner === 'cancelada' ? 'INVESTIGAÇÃO ENCERRADA' : 'MISTÉRIO RESOLVIDO'}
+        </span>
         <SparkleIcon className="result-sparkle" weight="fill" />
         <h1>
           {result.winner === 'civis'
@@ -157,8 +162,10 @@ function SecretCard() {
         </div>
         <span className="subtle">
           {room!.round} {room!.round === 1 ? 'rodada' : 'rodadas'} ·{' '}
-          {room!.eliminations.filter((e) => e.playerId !== result.impostorId).length} civis
-          eliminados
+          {room!.eliminations.filter((e) => e.playerId !== result.impostorId).length}{' '}
+          {room!.eliminations.filter((e) => e.playerId !== result.impostorId).length === 1
+            ? 'civil eliminado'
+            : 'civis eliminados'}
         </span>
       </section>
     );
@@ -529,7 +536,7 @@ export function GameBoard() {
                   >
                     <CheckIcon />{' '}
                     {selected
-                      ? `Votar em ${state.players.find((p) => p.id === selected)?.name}`
+                      ? `Confirmar voto em ${state.players.find((p) => p.id === selected)?.name}`
                       : 'Selecione um suspeito'}
                   </button>
                 )}
@@ -586,6 +593,18 @@ export function GameBoard() {
       {history && (
         <Modal title="Histórico da investigação" onClose={() => setHistory(false)}>
           <div className="history-list">
+            <section>
+              <h3>Eliminações</h3>
+              {state.eliminations.length ? (
+                state.eliminations.map((e) => (
+                  <p key={e.playerId}>
+                    <strong>{e.name}</strong> · rodada {e.round}
+                  </p>
+                ))
+              ) : (
+                <p>Ninguém foi eliminado até agora.</p>
+              )}
+            </section>
             {state.history.map((h) => (
               <section key={h.round}>
                 <h3>Rodada {h.round}</h3>

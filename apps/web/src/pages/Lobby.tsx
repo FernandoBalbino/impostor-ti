@@ -122,6 +122,10 @@ export function Lobby() {
   const [settingsDirty, setSettingsDirty] = useState(false);
   const ready = room!.players.filter((p) => p.ready && !p.spectator).length;
   const participants = room!.players.filter((p) => !p.spectator);
+  const validManualChoice =
+    room!.settings.selectionMode !== 'manual' ||
+    (privateState?.kind === 'teacher' &&
+      participants.some((p) => p.id === privateState.manualImpostorId));
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(room!.code);
@@ -201,6 +205,7 @@ export function Lobby() {
               disabled={
                 busy ||
                 settingsDirty ||
+                !validManualChoice ||
                 participants.length < 3 ||
                 participants.some((p) => !p.ready || !p.online)
               }
@@ -211,7 +216,9 @@ export function Lobby() {
             <p className="subtle centered">
               {settingsDirty
                 ? 'Salve as configurações antes de iniciar.'
-                : 'Pelo menos 3 alunos, todos conectados e prontos.'}
+                : !validManualChoice
+                  ? 'Escolha e salve um impostor antes de iniciar.'
+                  : 'Pelo menos 3 alunos, todos conectados e prontos.'}
             </p>
             <a
               className="ghost full"

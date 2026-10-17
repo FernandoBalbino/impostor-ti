@@ -2424,3 +2424,15 @@ strong {
     animation: none;
   }
 }
+
+.voted-marker {
+  display: inline-flex;
+  vertical-align: middle;
+  color: #33e6ac;
+  margin-left: 4px;
+  font-size: 10px;
+}
+.voted-marker svg {
+  height: 10px;
+  width: 10px;
+}

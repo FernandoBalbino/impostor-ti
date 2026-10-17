@@ -4,28 +4,28 @@ export const asset = (path: string) => `${import.meta.env.BASE_URL}${path}`;
 const palette = [
   'Vermelho',
   'Azul',
-  'Amarelo',
   'Verde',
-  'Roxo',
+  'Amarelo',
   'Laranja',
+  'Roxo',
   'Turquesa',
   'Rosa',
   'Branco',
-  'Marinho',
-  'Lima',
-  'Violeta',
-  'Coral',
-  'Céu',
-  'Dourado',
-  'Esmeralda',
-  'Lavanda',
-  'Âmbar',
-  'Ciano',
-  'Magenta',
-  'Prata',
-  'Índigo',
-  'Limão',
-  'Ametista',
+  'Vermelho',
+  'Azul',
+  'Verde',
+  'Amarelo',
+  'Laranja',
+  'Roxo',
+  'Turquesa',
+  'Rosa',
+  'Branco',
+  'Vermelho',
+  'Azul',
+  'Verde',
+  'Amarelo',
+  'Laranja',
+  'Roxo',
 ];
 export const Avatar = memo(function Avatar({
   index = 0,
@@ -38,7 +38,7 @@ export const Avatar = memo(function Avatar({
     <span
       className={`avatar ${className}`}
       role="img"
-      aria-label={`Personagem ${palette[index]}`}
+      aria-label={`Personagem ${palette[index]} ${String(index + 1).padStart(2, '0')}`}
       style={{
         backgroundPosition: `${[15.9, 38.95, 61.35, 83.85][index % 4]}% ${Math.floor(index / 4) * 20}%`,
       }}
@@ -138,7 +138,7 @@ export function AvatarPicker({
           type="button"
           key={i}
           className={`avatar-option ${value === i ? 'selected' : ''}`}
-          aria-label={`Personagem ${color}`}
+          aria-label={`Personagem ${color} ${String(i + 1).padStart(2, '0')}`}
           aria-pressed={value === i}
           onClick={() => onChange(i)}
         >

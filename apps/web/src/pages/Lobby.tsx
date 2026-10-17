@@ -136,7 +136,7 @@ export function Lobby() {
     }
   };
   return (
-    <main className="lobby-layout">
+    <main className={`lobby-layout ${teacher ? 'teacher-lobby' : 'student-lobby'}`}>
       <section className="panel lobby-main">
         <div className="lobby-heading">
           <div>

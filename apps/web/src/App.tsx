@@ -20,6 +20,9 @@ export function App() {
   const [help, setHelp] = useState(false);
   const isDisplay = route.pathname.startsWith('/telao/');
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [room?.phase, room?.code]);
+  useEffect(() => {
     if (room && !isDisplay && route.pathname !== `/sala/${room.code}`)
       navigate(`/sala/${room.code}`, { replace: true });
   }, [room?.code, isDisplay, route.pathname, navigate]);

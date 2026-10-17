@@ -43,6 +43,18 @@ function setup(n = 4, options: ConstructorParameters<typeof GameEngine>[0] = {})
 }
 const rejects = (fn: () => void, code: string) =>
   assert.throws(fn, (e: unknown) => e instanceof GameError && e.code === code);
+test('temporizador encerra a coleta mesmo sem novas mensagens dos alunos', async () => {
+  const s = setup();
+  try {
+    s.room.settings.clueSeconds = 0.005;
+    await s.start();
+    assert.equal(s.room.phase, 'WAITING_FOR_VOTE');
+    assert.equal(s.room.deadline, null);
+    assert.ok(s.room.history[0].clues.every((c) => c.text === 'Sem dica'));
+  } finally {
+    s.engine.close();
+  }
+});
 test('catálogo contém 60 palavras únicas, os exemplos e conceitos básicos', async () => {
   assert.equal(CATALOG.length, 60);
   assert.equal(new Set(CATALOG.map((w) => w.id)).size, 60);

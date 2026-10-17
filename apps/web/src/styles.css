@@ -2436,3 +2436,26 @@ strong {
   height: 10px;
   width: 10px;
 }
+
+@media (max-width: 850px) {
+  .student-lobby .lobby-sidebar {
+    order: -1;
+  }
+  .student-lobby .profile-preview > .avatar {
+    width: 60px;
+    height: 78px;
+  }
+  .student-lobby .profile-preview {
+    margin-bottom: 8px;
+  }
+  .student-lobby .lobby-sidebar .avatar-option .avatar {
+    width: 29px;
+    height: 35px;
+  }
+  .student-lobby .lobby-sidebar .avatar-picker {
+    margin: 12px auto;
+  }
+  .student-lobby .lobby-sidebar > .big {
+    min-height: 48px;
+  }
+}

@@ -1,0 +1,6 @@
+node_modules
+.tools
+**/dist
+qa-evidence
+package-lock.json
+apps/web/public

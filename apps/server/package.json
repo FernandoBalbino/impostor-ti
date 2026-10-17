@@ -1,0 +1,15 @@
+{
+  "name": "@impostor/server",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "@impostor/shared": "*",
+    "express": "latest",
+    "socket.io": "latest",
+    "zod": "latest"
+  }
+}

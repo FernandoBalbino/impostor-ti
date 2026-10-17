@@ -1,0 +1,39 @@
+{
+  "name": "impostor-ti",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n servidor,web \"npm run dev -w @impostor/server\" \"npm run dev -w @impostor/web\"",
+    "build:web": "npm run build -w @impostor/web",
+    "build:server": "esbuild apps/server/src/index.ts --bundle --platform=node --format=esm --target=node22 --external:express --external:socket.io --external:zod --outfile=apps/server/dist/index.js",
+    "start:server": "node apps/server/dist/index.js",
+    "check": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "test:load": "tsx scripts/load.ts",
+    "build": "npm run check && npm test && npm run build:server && npm run build:web"
+  },
+  "devDependencies": {
+    "@fortawesome/free-brands-svg-icons": "^7.3.1",
+    "@phosphor-icons/core": "^2.1.1",
+    "@types/express": "latest",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "ajv": "^8.20.0",
+    "concurrently": "latest",
+    "esbuild": "latest",
+    "pngjs": "^7.0.0",
+    "prettier": "^3.9.10",
+    "tsx": "latest",
+    "typescript": "latest",
+    "yaml": "^2.9.1"
+  }
+}

@@ -1,5 +1,50 @@
 # Validação — Impostor TI
 
+## Versão 2.2 — vinte poderes, três escolhas e abstenção — 18/10/2026
+
+- TypeScript, builds e **93/93 testes** aprovados. A cobertura inclui os vinte poderes, três escolhas privadas, Pandora e recarga de duas rodadas, suspensão por espaço, curas, proteções, letras acentuadas, nomes, votos ponderados e abstenção normal e no desempate.
+- Integração Socket.IO real confere visões individuais, remoção de dicas do histórico e da reconexão, Confusão privada, restauração da própria resposta e atualização de snapshots repetidos. Nenhum dado bloqueado depende apenas de ocultação na interface.
+- Navegador local em **1366×768 e 390×844**: vinte sprites, três escolhas obrigatórias, alteração desfazendo preparação, quatro ícones do impostor, transformação de Pandora preservando suspensão, contagem 2→1, escrita por Enter durante avisos, cancelamento e confirmação de abstenção por teclado e toque, recuperação após atualizar, ranking animado com abstenção separada, cegueira do histórico e nomes embaralhados somente para o alvo. Sem transbordamento horizontal ou erros do aplicativo; um erro de extensão do navegador foi separado da análise.
+- Conferência no site público final com 24 alunos, incluindo dois navegadores reais: seleção de três, ativação de Pandora e confirmação de abstenção. Nomes e detalhes dos poderes usam **Nunito** nos dois tamanhos; os demais títulos continuam em Pixelify. [Relatório do navegador](strategic-browser.json) e [imagem da fonte no celular](power-font-mobile.png).
+- **78 recursos distintos**, incluindo os 21 sprites de poderes, conferidos no Pages por HTTP e SHA-256 sem ausências ou divergências. [Relatório dos recursos](strategic-public-assets.json).
+- Frontend e backend publicados na mesma revisão de execução **`cec06ee`**, versão `2.2.0` / protocolo `4`. GitHub Actions [39153891939](https://github.com/FernandoBalbino/impostor-ti/actions/runs/39153891939) aprovado e deploy Render `dep-dbagt22jnfac73fludog` confirmado **live**. A atualização precedeu a sessão de carga; não houve deploy ou reinício durante a medição. Mantidos Render Free, uma instância e GitHub Pages.
+
+### Sessão pública contínua final
+
+Executada em **18/10/2026, de 15:34:19 a 16:04:53**, horário de Fortaleza (UTC−3), contra o backend público. Foram mantidos 24 alunos simulados, professor e telão, com as mesmas identidades. A revisão `cec06ee` foi conferida continuamente pelo endpoint de saúde.
+
+| Medida                                                              |                              Resultado |
+| ------------------------------------------------------------------- | -------------------------------------: |
+| Duração monotônica                                                  | **1.833,901 segundos — 30 min e 34 s** |
+| Partidas completas / rodadas                                        |                           **43 / 304** |
+| Rajadas de 24 tentativas simultâneas                                |                                 **84** |
+| Ativações válidas dos vinte poderes                                 |                              **1.772** |
+| Reconexões programadas                                              |                                 **50** |
+| Reenvios com o mesmo identificador                                  |                                **123** |
+| Respostas de votação / abstenções                                   |                      **7.141 / 5.153** |
+| Comandos confirmados, incluindo recusas esperadas                   |                             **19.912** |
+| Latência mediana / p95 / máxima                                     |           **160,9 / 172,8 / 495,6 ms** |
+| Quedas inesperadas, cobranças duplicadas ou divergências detectadas |                                  **0** |
+| Erros nos logs do Render durante a janela consultada                |                                  **0** |
+
+O relatório terminou com **`completed: true` e `errors: []`**: [dados completos](public-strategic-load-30min.json). A confirmação p95 ficou abaixo de 1,5 segundo e a máxima abaixo de 5 segundos. Os tempos medem ida e volta até o ACK Socket.IO, com relógio monotônico neste computador, incluindo a rede. A sessão foi encerrada após concluir a última partida, por isso ultrapassou os 30 minutos solicitados.
+
+O simulador alternou 1–3 impostores, percorreu os vinte poderes duas vezes e repetiu parte do catálogo. Conferiu recarga na rodada correta, limite compartilhado, uso único da Égide, sorteios idempotentes, conflitos por alvo, curas, suspensão, Pandora, votos com pesos registrados e rodadas com todos pulando. Cada partida terminou com a vitória civil somente após eliminar todos os impostores. Casos específicos de desempate e confirmações atrasadas também estão cobertos pelos testes de regras e integração.
+
+As recusas esperadas foram `POWER_SUSPENDED` (26), `ONE_POWER_PER_ROUND` (48), `POWER_SPENT` (48), `EFFECT_ACTIVE` (166) e `INVALID_TARGET` (4). Não entram como falhas: o script exigiu a recusa correta sem cobrança indevida. As ativações absorvidas por uma barreira seguem a regra de consumir uso e recarga.
+
+Uma tentativa preliminar foi interrompida antes desta sessão: o simulador começou a preencher dicas usando, para um cliente, a confirmação privada da rodada anterior. O servidor permaneceu na coleta aguardando a dica que o simulador havia omitido. O script passou a aguardar tanto a fase pública quanto o prazo e o estado privados da nova rodada. Essa tentativa parcial não integra a duração nem os números aprovados e não exigiu alteração do aplicativo publicado. A execução final usou `LOAD_PROFILE_OFFSET=16` e cronômetros normais, sem `LOAD_FAST`.
+
+### Recursos e limites da evidência
+
+As **63 amostras** de saúde registraram RSS de **88,7–99,5 MB**, heap de **18,3–28,1 MB** e p95 do atraso do event loop de **20,20–20,28 ms**. O histograma de processamento é cumulativo e usa resolução de 20 ms; não representa a latência de confirmação dos comandos.
+
+As métricas do Render, em janelas de 60 segundos entre 18:34:19 e 19:05:00 UTC, registraram maior amostra de CPU de **0,01312**, cerca de **8,7%** do limite `0,15`, e memória de **116,2 MB**, cerca de **21,6%** do limite de 536,9 MB. São amostras agregadas da plataforma. [Métricas](strategic-render-metrics.json) e [consulta de logs](strategic-render-logs.json).
+
+O endpoint de saúde compartilhado registrou 27–29 transportes: os 26 clientes lógicos do teste, uma conexão externa ao simulador e sobreposições breves nas reconexões programadas. As verificações exigiram sempre 24 identidades únicas de alunos na sala. Após encerrar a carga, restou uma conexão no serviço.
+
+Esta evidência cobre clientes simulados e as sessões de navegador descritas acima; não substitui uma aula com 24 Chromebooks nem mede o Wi-Fi escolar. Salas continuam em memória e não sobrevivem a reinício ou deploy do Render. A análise posterior do Cloudflare e sua configuração gratuita estão em [CLOUDFLARE.md](CLOUDFLARE.md); não houve migração de hospedagem nesta publicação.
+
 ## Versão 2.1 — Vestígio do Invisível e ranking animado
 
 - TypeScript, builds e **70/70 testes** aprovados. A regressão cobre todas as regras anteriores de voto e revelação.

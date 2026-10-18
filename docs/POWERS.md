@@ -55,9 +55,9 @@ O comando de votação inclui seu identificador e um alvo explícito: jogador ou
 
 ### Vestígio do Invisível — exclusivo do impostor
 
-Além das duas escolhas privadas do lobby, cada impostor recebe automaticamente **Vestígio do Invisível**, com sprite vermelho. Ele não aparece na seleção de personagens ou poderes e não ocupa nenhuma das duas escolhas.
+Além das três escolhas privadas do lobby, cada impostor recebe automaticamente **Vestígio do Invisível**, com sprite vermelho. Ele não aparece na seleção de personagens ou poderes e não ocupa nenhum dos três espaços.
 
-Nas etapas ativas, revela **somente a primeira letra da palavra**, em uma notificação privada e no painel do próprio impostor. O servidor não envia nome, ID ou imagem do item com essa pista. Usado na rodada 1, volta na 5; a recarga de quatro rodadas é independente. Ele compartilha o limite de um poder por rodada com os outros dois poderes. Eliminados, espectadores e civis não podem ativá-lo. Reconexão preserva pista e recarga; nova partida apaga ambos e concede a habilidade aos novos impostores.
+Nas etapas ativas, revela **somente a primeira letra da palavra**, em uma notificação privada e no painel do próprio impostor. O servidor não envia nome, ID ou imagem do item com essa pista. Usado na rodada 1, volta na 5; a recarga de quatro rodadas é independente. Ele compartilha o limite de um poder por rodada com os três poderes comuns. Eliminados, espectadores e civis não podem ativá-lo. Reconexão preserva pista e recarga; nova partida apaga ambos e concede a habilidade aos novos impostores.
 
 ### Equipes
 
@@ -67,7 +67,9 @@ Civis vencem ao eliminar todos os impostores. Impostores vencem quando igualam o
 
 ## Recursos e rede
 
-Os dez sprites foram gerados individualmente com Image Gen. PNG originais: `docs/power-sprites/`. Versões de 128×128 em WebP sem perdas e com transparência: `apps/web/public/assets/powers/`. Prompts em [IMAGE-PROMPTS.md](IMAGE-PROMPTS.md). As dez versões de jogo somam aproximadamente 136 KB e são servidas pelo GitHub Pages.
+Os vinte sprites comuns e o exclusivo do impostor foram gerados individualmente com Image Gen. PNG originais: `docs/power-sprites/`. Versões de 128×128 em WebP sem perdas e com transparência: `apps/web/public/assets/powers/`. Prompts dos primeiros poderes em [IMAGE-PROMPTS.md](IMAGE-PROMPTS.md) e dos dez novos em [new-power-sprites.json](new-power-sprites.json). Todos são servidos pelo GitHub Pages.
+
+Nomes, descrições, detalhes e notificações dos poderes usam a fonte Nunito para facilitar a leitura. Os demais títulos preservam a fonte pixel art do projeto.
 
 As regras são validadas no servidor. Cada pedido possui um identificador cujo resultado é preservado por sessão; repetir uma ativação devolve o resultado anterior, sem cobrar ou sortear novamente. Notificações usam sequências individuais e são recuperadas sem exibições repetidas após atualizar a aba.
 

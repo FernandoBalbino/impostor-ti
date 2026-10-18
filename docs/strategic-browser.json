@@ -1,0 +1,56 @@
+{
+  "localFeatureRevision": "0144f09",
+  "publicRuntimeRevision": "cec06ee",
+  "local": {
+    "viewports": {
+      "desktop": {
+        "height": 768,
+        "scrollWidth": 1366,
+        "width": 1366
+      },
+      "mobile": {
+        "height": 844,
+        "scrollWidth": 390,
+        "width": 390
+      }
+    },
+    "checks": [
+      "20 sprites carregados",
+      "Três escolhas obrigatórias",
+      "Alterar escolha desfaz preparação",
+      "Quatro ícones para impostor; três para civil",
+      "Pandora transforma na rodada seguinte e mantém suspensão",
+      "Mão Divina: contador 2 para 1",
+      "Escrita e envio por Enter durante notificações",
+      "Pular voto: cancelar, confirmar, atualizar e recuperar",
+      "Confirmação por teclado",
+      "Ranking 2 e 1 votos; abstenção separada",
+      "Barras crescem após abrir",
+      "Olho do Vazio bloqueia dicas e histórico",
+      "Confusão altera 24 nomes somente no alvo"
+    ],
+    "bars": {
+      "start": [31.54205322265625, 31.54205322265625]
+    },
+    "appErrors": [],
+    "excludedExtensionErrors": true
+  },
+  "published": {
+    "checkedAt": "2026-10-18T18:27:25.581Z",
+    "desktop": {
+      "font": "Nunito, system-ui, sans-serif",
+      "height": 768,
+      "scrollWidth": 1366,
+      "text": "Caixa de Pandora",
+      "width": 1366
+    },
+    "mobile": "Nunito, system-ui, sans-serif; 390x844; sem transbordamento",
+    "preservedHeadingFont": "Pixelify, monospace",
+    "publicFlow": {
+      "players": 24,
+      "pandoraAccepted": true,
+      "skipConfirmed": true
+    },
+    "consoleErrors": []
+  }
+}

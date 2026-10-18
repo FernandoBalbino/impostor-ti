@@ -34,3 +34,11 @@ O cenário e o atlas são servidos em WebP sem perdas. A conversão preservou to
 # Vestígio do Invisível
 
 Sprite original gerado individualmente com a ferramenta integrada Image Gen, em modo de geração e com transparência. Original: `docs/power-sprites/vestige.png`. Recurso servido pelo Pages: `apps/web/public/assets/powers/vestige.webp`, 128×128, WebP lossless de 13.076 bytes. Predominância vermelha, olho e runa A para representar a primeira letra. Otimização com amostragem nearest e alfa preservado; o modal de votos reutiliza `Avatar`, fontes, ícones e componentes existentes, sem novas imagens de interface.
+
+## Extensão do catálogo: dez novos sprites
+
+Labirinto das Palavras, Dado de Dionísio, Caixa de Pandora, Close Falso, Tudo ou Nada, Olho do Vazio, Mão Divina, O Escolhido, Confusão e Fogo de Prometeu foram gerados individualmente com a ferramenta integrada Image Gen. Cada imagem tem fundo transparente, contorno escuro e direção de pixel art compatível com os poderes existentes.
+
+Os dez PNG originais estão em [power-sprites](power-sprites/). Os recursos usados pelo jogo estão em apps/web/public/assets/powers, em WebP sem perdas, 128×128, com transparência preservada e redimensionamento nearest. O [manifesto de prompts](new-power-sprites.json) registra ferramenta, direção visual, assunto de cada sprite e caminhos finais. As imagens são servidas pelo Pages e não trafegam pelo Socket.IO.
+
+A interface dos poderes usa Nunito para nomes, descrições, detalhes e notificações, conforme a preferência de legibilidade. Os demais títulos mantêm o estilo existente.

@@ -1,0 +1,29 @@
+{
+  "at": "2026-10-18T18:39:56.332Z",
+  "note": "HTTP health endpoints from different applications. This does not measure game command latency or prove a migration gain.",
+  "results": {
+    "render": {
+      "url": "https://impostor-ti-api.onrender.com/health",
+      "status": 200,
+      "edge": "a4c9ab4dd87ae41d-GRU",
+      "samplesMs": [
+        558.1706, 179.20119999999997, 192.0703000000001, 180.87810000000002, 181.79650000000015,
+        174.9176, 178.3182999999999, 172.5697, 189.44190000000003, 178.91400000000021
+      ],
+      "medianWarmMs": 179.20119999999997,
+      "responseBody": "{\"status\":\"ok\",\"service\":\"impostor-ti\",\"version\":\"2.2.0\",\"protocolVersion\":4,\"release\":\"cec06ee\",\"rooms\":3,\"activeGames\":2,\"metrics\":{\"uptimeSeconds\":974,\"rssBytes\":95944704,\"heapBytes\":20549224,\"cpu\":{\"user\":5526452,\"system\":1703137},\"eventLoopP95Ms\":20.22,\"commands\":6464,\"connections\":27}}"
+    },
+    "cloudflareExistingWorker": {
+      "url": "https://labirinto-online.dev-fernandobalbino.workers.dev/health",
+      "status": 200,
+      "edge": "a4c9ab543fc5ff8c-GRU",
+      "samplesMs": [
+        311.13239999999996, 60.58889999999974, 69.8155999999999, 60.20499999999993,
+        62.009000000000015, 68.37739999999985, 74.98829999999998, 82.62019999999984,
+        45.551400000000285, 61.352499999999964
+      ],
+      "medianWarmMs": 62.009000000000015,
+      "responseBody": "{\"ready\":true,\"persistence\":\"sqlite\",\"restartRecovery\":true,\"platform\":\"cloudflare\",\"version\":\"1.1.0\"}"
+    }
+  }
+}

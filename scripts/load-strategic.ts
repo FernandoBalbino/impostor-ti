@@ -40,11 +40,20 @@ const report: Record<string, unknown> = {
   requestedMinutes: duration / 60000,
   students: 24,
   connections: 26,
+  profileOffset: Number(process.env.LOAD_PROFILE_OFFSET ?? 10),
   completed: false,
   errors,
 };
 const phase = async (p: string) => {
   await until(() => clients.every((c) => c.room?.phase === p), 20000);
+  // A fase pública e o estado privado chegam em pacotes separados.
+  // Aguarde ambos para não reutilizar a confirmação da dica da rodada anterior.
+  if (p === 'CLUES')
+    await until(() =>
+      students
+        .filter((c) => c.room!.players.find((player) => player.id === state(c).playerId)!.alive)
+        .every((c) => !state(c).clueSubmitted && state(c).clueDeadline === c.room!.clueDeadline),
+    );
   await pause(35);
 };
 const metric = async () => {
@@ -446,6 +455,15 @@ try {
     }),
   );
 } catch (error) {
+  report.failureState = clients.map((c) => ({
+    kind: c.privateState?.kind,
+    phase: c.room?.phase,
+    round: c.room?.round,
+    clueCount: c.room?.clueCount,
+    playerId: c.privateState?.kind === 'player' ? c.privateState.playerId : undefined,
+    clueSubmitted: c.privateState?.kind === 'player' ? c.privateState.clueSubmitted : undefined,
+    clueDeadline: c.privateState?.kind === 'player' ? c.privateState.clueDeadline : undefined,
+  }));
   errors.push(error instanceof Error ? (error.stack ?? error.message) : String(error));
   console.error(errors.at(-1));
 } finally {

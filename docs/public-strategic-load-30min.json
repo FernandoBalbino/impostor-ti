@@ -1,0 +1,878 @@
+{
+  "url": "https://impostor-ti-api.onrender.com",
+  "requestedMinutes": 30,
+  "students": 24,
+  "connections": 26,
+  "profileOffset": 16,
+  "completed": true,
+  "errors": [],
+  "code": "2969NL",
+  "startedAt": "2026-10-18T18:34:19.614Z",
+  "release": "cec06ee",
+  "protocolVersion": 4,
+  "games": 43,
+  "rounds": 304,
+  "bursts": 84,
+  "reconnections": 50,
+  "retries": 123,
+  "ballots": 7141,
+  "abstentions": 5153,
+  "accepted": {
+    "silence": 96,
+    "letter": 144,
+    "aegis": 48,
+    "double_vote": 96,
+    "ban_vote": 96,
+    "oracle": 96,
+    "echo": 96,
+    "refuge": 48,
+    "erase": 92,
+    "veil": 96,
+    "labyrinth": 96,
+    "dice": 96,
+    "pandora": 48,
+    "name_swap": 42,
+    "all_or_nothing": 32,
+    "void_eye": 96,
+    "divine_hand": 118,
+    "chosen": 144,
+    "confusion": 144,
+    "prometheus": 48
+  },
+  "declined": {
+    "POWER_SUSPENDED": 26,
+    "ONE_POWER_PER_ROUND": 48,
+    "POWER_SPENT": 48,
+    "EFFECT_ACTIVE": 166,
+    "INVALID_TARGET": 4
+  },
+  "elapsedSeconds": 1833.9006268,
+  "commands": 19912,
+  "latencyMs": {
+    "median": 160.94060000008903,
+    "p95": 172.77570000011474,
+    "max": 495.5552000000025
+  },
+  "healthSamples": [
+    {
+      "at": "2026-10-18T18:34:20.144Z",
+      "uptimeSeconds": 638,
+      "rssBytes": 93859840,
+      "heapBytes": 18327432,
+      "cpu": {
+        "user": 3375410,
+        "system": 973783
+      },
+      "eventLoopP95Ms": 20.2,
+      "commands": 3044,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:34:50.656Z",
+      "uptimeSeconds": 669,
+      "rssBytes": 93859840,
+      "heapBytes": 20158728,
+      "cpu": {
+        "user": 3593415,
+        "system": 1053847
+      },
+      "eventLoopP95Ms": 20.2,
+      "commands": 3454,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:35:20.673Z",
+      "uptimeSeconds": 699,
+      "rssBytes": 93859840,
+      "heapBytes": 20706360,
+      "cpu": {
+        "user": 3765886,
+        "system": 1138651
+      },
+      "eventLoopP95Ms": 20.2,
+      "commands": 3814,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:35:50.674Z",
+      "uptimeSeconds": 729,
+      "rssBytes": 93990912,
+      "heapBytes": 24041624,
+      "cpu": {
+        "user": 3944832,
+        "system": 1198806
+      },
+      "eventLoopP95Ms": 20.2,
+      "commands": 4096,
+      "connections": 29
+    },
+    {
+      "at": "2026-10-18T18:36:20.464Z",
+      "uptimeSeconds": 759,
+      "rssBytes": 93913088,
+      "heapBytes": 24502184,
+      "cpu": {
+        "user": 4229689,
+        "system": 1279162
+      },
+      "eventLoopP95Ms": 20.2,
+      "commands": 4422,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:36:50.433Z",
+      "uptimeSeconds": 789,
+      "rssBytes": 94175232,
+      "heapBytes": 25407648,
+      "cpu": {
+        "user": 4425891,
+        "system": 1344577
+      },
+      "eventLoopP95Ms": 20.2,
+      "commands": 4805,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:37:20.433Z",
+      "uptimeSeconds": 819,
+      "rssBytes": 94306304,
+      "heapBytes": 26302184,
+      "cpu": {
+        "user": 4530418,
+        "system": 1385765
+      },
+      "eventLoopP95Ms": 20.2,
+      "commands": 4935,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:37:50.697Z",
+      "uptimeSeconds": 849,
+      "rssBytes": 94437376,
+      "heapBytes": 27265184,
+      "cpu": {
+        "user": 4679879,
+        "system": 1434588
+      },
+      "eventLoopP95Ms": 20.22,
+      "commands": 5166,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:38:20.476Z",
+      "uptimeSeconds": 879,
+      "rssBytes": 96141312,
+      "heapBytes": 20695592,
+      "cpu": {
+        "user": 4854933,
+        "system": 1490248
+      },
+      "eventLoopP95Ms": 20.2,
+      "commands": 5367,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:38:50.467Z",
+      "uptimeSeconds": 909,
+      "rssBytes": 96141312,
+      "heapBytes": 22531160,
+      "cpu": {
+        "user": 5054385,
+        "system": 1562942
+      },
+      "eventLoopP95Ms": 20.22,
+      "commands": 5727,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:39:20.700Z",
+      "uptimeSeconds": 939,
+      "rssBytes": 96141312,
+      "heapBytes": 25127032,
+      "cpu": {
+        "user": 5246319,
+        "system": 1614419
+      },
+      "eventLoopP95Ms": 20.22,
+      "commands": 6029,
+      "connections": 28
+    },
+    {
+      "at": "2026-10-18T18:39:50.477Z",
+      "uptimeSeconds": 969,
+      "rssBytes": 95944704,
+      "heapBytes": 20289424,
+      "cpu": {
+        "user": 5496075,
+        "system": 1686624
+      },
+      "eventLoopP95Ms": 20.22,
+      "commands": 6412,
+      "connections": 28
+    },
+    {
+      "at": "2026-10-18T18:40:20.498Z",
+      "uptimeSeconds": 999,
+      "rssBytes": 96075776,
+      "heapBytes": 22812816,
+      "cpu": {
+        "user": 5708762,
+        "system": 1764857
+      },
+      "eventLoopP95Ms": 20.22,
+      "commands": 6743,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:40:50.773Z",
+      "uptimeSeconds": 1029,
+      "rssBytes": 97779712,
+      "heapBytes": 23954704,
+      "cpu": {
+        "user": 5892672,
+        "system": 1831068
+      },
+      "eventLoopP95Ms": 20.22,
+      "commands": 7056,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:41:20.561Z",
+      "uptimeSeconds": 1059,
+      "rssBytes": 97779712,
+      "heapBytes": 19627832,
+      "cpu": {
+        "user": 6098588,
+        "system": 1894385
+      },
+      "eventLoopP95Ms": 20.22,
+      "commands": 7331,
+      "connections": 28
+    },
+    {
+      "at": "2026-10-18T18:41:50.504Z",
+      "uptimeSeconds": 1089,
+      "rssBytes": 97779712,
+      "heapBytes": 21532784,
+      "cpu": {
+        "user": 6310450,
+        "system": 1945341
+      },
+      "eventLoopP95Ms": 20.22,
+      "commands": 7690,
+      "connections": 28
+    },
+    {
+      "at": "2026-10-18T18:42:20.769Z",
+      "uptimeSeconds": 1119,
+      "rssBytes": 97779712,
+      "heapBytes": 24096064,
+      "cpu": {
+        "user": 6534198,
+        "system": 2013457
+      },
+      "eventLoopP95Ms": 20.22,
+      "commands": 8073,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:42:50.507Z",
+      "uptimeSeconds": 1149,
+      "rssBytes": 97779712,
+      "heapBytes": 24606760,
+      "cpu": {
+        "user": 6722764,
+        "system": 2071888
+      },
+      "eventLoopP95Ms": 20.22,
+      "commands": 8431,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:43:20.506Z",
+      "uptimeSeconds": 1179,
+      "rssBytes": 97779712,
+      "heapBytes": 20045040,
+      "cpu": {
+        "user": 6968980,
+        "system": 2132591
+      },
+      "eventLoopP95Ms": 20.22,
+      "commands": 8730,
+      "connections": 28
+    },
+    {
+      "at": "2026-10-18T18:43:50.510Z",
+      "uptimeSeconds": 1209,
+      "rssBytes": 97910784,
+      "heapBytes": 22238288,
+      "cpu": {
+        "user": 7184750,
+        "system": 2199547
+      },
+      "eventLoopP95Ms": 20.23,
+      "commands": 9110,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:44:20.522Z",
+      "uptimeSeconds": 1239,
+      "rssBytes": 97767424,
+      "heapBytes": 23903168,
+      "cpu": {
+        "user": 7400422,
+        "system": 2292094
+      },
+      "eventLoopP95Ms": 20.23,
+      "commands": 9470,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:44:50.769Z",
+      "uptimeSeconds": 1269,
+      "rssBytes": 97767424,
+      "heapBytes": 25950072,
+      "cpu": {
+        "user": 7615183,
+        "system": 2347364
+      },
+      "eventLoopP95Ms": 20.23,
+      "commands": 9854,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:45:20.524Z",
+      "uptimeSeconds": 1299,
+      "rssBytes": 97898496,
+      "heapBytes": 23063432,
+      "cpu": {
+        "user": 7835626,
+        "system": 2399503
+      },
+      "eventLoopP95Ms": 20.23,
+      "commands": 10105,
+      "connections": 28
+    },
+    {
+      "at": "2026-10-18T18:45:50.784Z",
+      "uptimeSeconds": 1329,
+      "rssBytes": 97898496,
+      "heapBytes": 24683776,
+      "cpu": {
+        "user": 8039868,
+        "system": 2469207
+      },
+      "eventLoopP95Ms": 20.23,
+      "commands": 10463,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:46:20.580Z",
+      "uptimeSeconds": 1359,
+      "rssBytes": 98164736,
+      "heapBytes": 26299880,
+      "cpu": {
+        "user": 8283188,
+        "system": 2542041
+      },
+      "eventLoopP95Ms": 20.23,
+      "commands": 10821,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:46:50.806Z",
+      "uptimeSeconds": 1389,
+      "rssBytes": 98426880,
+      "heapBytes": 21924256,
+      "cpu": {
+        "user": 8555984,
+        "system": 2617938
+      },
+      "eventLoopP95Ms": 20.25,
+      "commands": 11182,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:47:20.774Z",
+      "uptimeSeconds": 1419,
+      "rssBytes": 98766848,
+      "heapBytes": 21729352,
+      "cpu": {
+        "user": 8827827,
+        "system": 2678585
+      },
+      "eventLoopP95Ms": 20.25,
+      "commands": 11432,
+      "connections": 28
+    },
+    {
+      "at": "2026-10-18T18:47:50.571Z",
+      "uptimeSeconds": 1449,
+      "rssBytes": 98897920,
+      "heapBytes": 28080344,
+      "cpu": {
+        "user": 9079540,
+        "system": 2759695
+      },
+      "eventLoopP95Ms": 20.25,
+      "commands": 11816,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:48:20.567Z",
+      "uptimeSeconds": 1479,
+      "rssBytes": 98897920,
+      "heapBytes": 22255704,
+      "cpu": {
+        "user": 9329954,
+        "system": 2841279
+      },
+      "eventLoopP95Ms": 20.25,
+      "commands": 12177,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:48:50.584Z",
+      "uptimeSeconds": 1509,
+      "rssBytes": 98897920,
+      "heapBytes": 24547296,
+      "cpu": {
+        "user": 9520923,
+        "system": 2913345
+      },
+      "eventLoopP95Ms": 20.25,
+      "commands": 12508,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:49:20.843Z",
+      "uptimeSeconds": 1539,
+      "rssBytes": 99422208,
+      "heapBytes": 20332488,
+      "cpu": {
+        "user": 9735496,
+        "system": 2974496
+      },
+      "eventLoopP95Ms": 20.25,
+      "commands": 12783,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:49:50.858Z",
+      "uptimeSeconds": 1569,
+      "rssBytes": 99422208,
+      "heapBytes": 21565008,
+      "cpu": {
+        "user": 9946371,
+        "system": 3048738
+      },
+      "eventLoopP95Ms": 20.25,
+      "commands": 13194,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:50:20.891Z",
+      "uptimeSeconds": 1599,
+      "rssBytes": 99495936,
+      "heapBytes": 25675936,
+      "cpu": {
+        "user": 10154073,
+        "system": 3129556
+      },
+      "eventLoopP95Ms": 20.27,
+      "commands": 13505,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:50:50.869Z",
+      "uptimeSeconds": 1629,
+      "rssBytes": 99495936,
+      "heapBytes": 27616952,
+      "cpu": {
+        "user": 10346499,
+        "system": 3195597
+      },
+      "eventLoopP95Ms": 20.27,
+      "commands": 13847,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:51:20.674Z",
+      "uptimeSeconds": 1659,
+      "rssBytes": 94326784,
+      "heapBytes": 23499088,
+      "cpu": {
+        "user": 10641176,
+        "system": 3282362
+      },
+      "eventLoopP95Ms": 20.27,
+      "commands": 14185,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:51:50.605Z",
+      "uptimeSeconds": 1689,
+      "rssBytes": 94326784,
+      "heapBytes": 23458520,
+      "cpu": {
+        "user": 10715021,
+        "system": 3319552
+      },
+      "eventLoopP95Ms": 20.27,
+      "commands": 14263,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:52:20.844Z",
+      "uptimeSeconds": 1719,
+      "rssBytes": 94720000,
+      "heapBytes": 24403152,
+      "cpu": {
+        "user": 10840581,
+        "system": 3371458
+      },
+      "eventLoopP95Ms": 20.27,
+      "commands": 14444,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:52:50.624Z",
+      "uptimeSeconds": 1749,
+      "rssBytes": 88719360,
+      "heapBytes": 20477400,
+      "cpu": {
+        "user": 11124026,
+        "system": 3429515
+      },
+      "eventLoopP95Ms": 20.27,
+      "commands": 14777,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:53:20.864Z",
+      "uptimeSeconds": 1779,
+      "rssBytes": 90800128,
+      "heapBytes": 23061344,
+      "cpu": {
+        "user": 11358550,
+        "system": 3502319
+      },
+      "eventLoopP95Ms": 20.27,
+      "commands": 15109,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:53:50.636Z",
+      "uptimeSeconds": 1809,
+      "rssBytes": 92790784,
+      "heapBytes": 25413416,
+      "cpu": {
+        "user": 11601507,
+        "system": 3586881
+      },
+      "eventLoopP95Ms": 20.27,
+      "commands": 15465,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:54:20.890Z",
+      "uptimeSeconds": 1839,
+      "rssBytes": 95502336,
+      "heapBytes": 26262736,
+      "cpu": {
+        "user": 11888143,
+        "system": 3652616
+      },
+      "eventLoopP95Ms": 20.27,
+      "commands": 15785,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:54:50.654Z",
+      "uptimeSeconds": 1869,
+      "rssBytes": 96026624,
+      "heapBytes": 20146024,
+      "cpu": {
+        "user": 12123087,
+        "system": 3722411
+      },
+      "eventLoopP95Ms": 20.27,
+      "commands": 16119,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:55:20.895Z",
+      "uptimeSeconds": 1899,
+      "rssBytes": 96288768,
+      "heapBytes": 21553824,
+      "cpu": {
+        "user": 12332840,
+        "system": 3794147
+      },
+      "eventLoopP95Ms": 20.27,
+      "commands": 16431,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:55:50.647Z",
+      "uptimeSeconds": 1929,
+      "rssBytes": 96329728,
+      "heapBytes": 23459592,
+      "cpu": {
+        "user": 12560770,
+        "system": 3864604
+      },
+      "eventLoopP95Ms": 20.27,
+      "commands": 16814,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:56:20.941Z",
+      "uptimeSeconds": 1959,
+      "rssBytes": 96329728,
+      "heapBytes": 26685744,
+      "cpu": {
+        "user": 12726985,
+        "system": 3924803
+      },
+      "eventLoopP95Ms": 20.27,
+      "commands": 17064,
+      "connections": 28
+    },
+    {
+      "at": "2026-10-18T18:56:50.650Z",
+      "uptimeSeconds": 1989,
+      "rssBytes": 96329728,
+      "heapBytes": 21177720,
+      "cpu": {
+        "user": 12984534,
+        "system": 3989739
+      },
+      "eventLoopP95Ms": 20.27,
+      "commands": 17449,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:57:20.649Z",
+      "uptimeSeconds": 2019,
+      "rssBytes": 96276480,
+      "heapBytes": 22917840,
+      "cpu": {
+        "user": 13183750,
+        "system": 4058391
+      },
+      "eventLoopP95Ms": 20.27,
+      "commands": 17807,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:57:50.908Z",
+      "uptimeSeconds": 2049,
+      "rssBytes": 96276480,
+      "heapBytes": 24123472,
+      "cpu": {
+        "user": 13397458,
+        "system": 4106130
+      },
+      "eventLoopP95Ms": 20.27,
+      "commands": 18162,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:58:20.655Z",
+      "uptimeSeconds": 2079,
+      "rssBytes": 96276480,
+      "heapBytes": 20498152,
+      "cpu": {
+        "user": 13618889,
+        "system": 4171768
+      },
+      "eventLoopP95Ms": 20.27,
+      "commands": 18484,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:58:50.887Z",
+      "uptimeSeconds": 2109,
+      "rssBytes": 96268288,
+      "heapBytes": 21758968,
+      "cpu": {
+        "user": 13857587,
+        "system": 4237879
+      },
+      "eventLoopP95Ms": 20.27,
+      "commands": 18870,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:59:20.668Z",
+      "uptimeSeconds": 2139,
+      "rssBytes": 96399360,
+      "heapBytes": 24024536,
+      "cpu": {
+        "user": 14055703,
+        "system": 4311674
+      },
+      "eventLoopP95Ms": 20.27,
+      "commands": 19230,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T18:59:50.668Z",
+      "uptimeSeconds": 2169,
+      "rssBytes": 96399360,
+      "heapBytes": 25468432,
+      "cpu": {
+        "user": 14231432,
+        "system": 4381240
+      },
+      "eventLoopP95Ms": 20.27,
+      "commands": 19562,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T19:00:20.947Z",
+      "uptimeSeconds": 2199,
+      "rssBytes": 96415744,
+      "heapBytes": 21131736,
+      "cpu": {
+        "user": 14471823,
+        "system": 4441727
+      },
+      "eventLoopP95Ms": 20.27,
+      "commands": 19837,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T19:00:50.914Z",
+      "uptimeSeconds": 2229,
+      "rssBytes": 96415744,
+      "heapBytes": 22513664,
+      "cpu": {
+        "user": 14679067,
+        "system": 4524208
+      },
+      "eventLoopP95Ms": 20.27,
+      "commands": 20222,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T19:01:20.745Z",
+      "uptimeSeconds": 2259,
+      "rssBytes": 96915456,
+      "heapBytes": 22205000,
+      "cpu": {
+        "user": 14995975,
+        "system": 4595518
+      },
+      "eventLoopP95Ms": 20.28,
+      "commands": 20582,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T19:01:50.704Z",
+      "uptimeSeconds": 2289,
+      "rssBytes": 97177600,
+      "heapBytes": 25738512,
+      "cpu": {
+        "user": 15211787,
+        "system": 4671989
+      },
+      "eventLoopP95Ms": 20.28,
+      "commands": 20914,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T19:02:20.711Z",
+      "uptimeSeconds": 2319,
+      "rssBytes": 97452032,
+      "heapBytes": 23932608,
+      "cpu": {
+        "user": 15472925,
+        "system": 4731707
+      },
+      "eventLoopP95Ms": 20.28,
+      "commands": 21189,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T19:02:50.699Z",
+      "uptimeSeconds": 2349,
+      "rssBytes": 97452032,
+      "heapBytes": 27314744,
+      "cpu": {
+        "user": 15695870,
+        "system": 4819655
+      },
+      "eventLoopP95Ms": 20.28,
+      "commands": 21550,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T19:03:20.711Z",
+      "uptimeSeconds": 2379,
+      "rssBytes": 97452032,
+      "heapBytes": 20821976,
+      "cpu": {
+        "user": 15935063,
+        "system": 4888006
+      },
+      "eventLoopP95Ms": 20.28,
+      "commands": 21935,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T19:03:50.718Z",
+      "uptimeSeconds": 2409,
+      "rssBytes": 97452032,
+      "heapBytes": 22746440,
+      "cpu": {
+        "user": 16115984,
+        "system": 4948834
+      },
+      "eventLoopP95Ms": 20.28,
+      "commands": 22242,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T19:04:20.701Z",
+      "uptimeSeconds": 2439,
+      "rssBytes": 97452032,
+      "heapBytes": 26091056,
+      "cpu": {
+        "user": 16322779,
+        "system": 5016895
+      },
+      "eventLoopP95Ms": 20.28,
+      "commands": 22568,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T19:04:50.733Z",
+      "uptimeSeconds": 2469,
+      "rssBytes": 97583104,
+      "heapBytes": 22394824,
+      "cpu": {
+        "user": 16597331,
+        "system": 5092733
+      },
+      "eventLoopP95Ms": 20.28,
+      "commands": 22929,
+      "connections": 27
+    },
+    {
+      "at": "2026-10-18T19:04:53.505Z",
+      "uptimeSeconds": 2472,
+      "rssBytes": 97583104,
+      "heapBytes": 22272624,
+      "cpu": {
+        "user": 16608893,
+        "system": 5096209
+      },
+      "eventLoopP95Ms": 20.28,
+      "commands": 22930,
+      "connections": 27
+    }
+  ],
+  "finishedAt": "2026-10-18T19:04:53.521Z"
+}

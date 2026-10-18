@@ -2,7 +2,7 @@
 
 Em 18/10/2026, foram instaladas as 19 skills oficiais de `cloudflare/skills` e registrado o MCP oficial `https://mcp.cloudflare.com/mcp` no Codex. O login OAuth foi concluído com acesso de leitura à conta, scripts, logs e observabilidade de Workers. O painel da conta mostrou **Free** como plano atual. Nenhum plano pago foi ativado.
 
-O MCP oficial de documentação também foi consultado por Streamable HTTP. A integração de administração registrada fica disponível ao carregar novamente os servidores MCP no Codex. A instalação não altera a hospedagem nem a latência do jogo por si só.
+O MCP oficial de documentação também foi consultado por Streamable HTTP. Após o carregamento dos servidores MCP nesta sessão, a integração oficial de administração confirmou a identidade autenticada e listou os Workers da conta com **HTTP 200**, sem erros. A instalação não altera a hospedagem nem a latência do jogo por si só. [Conferência da conexão](cloudflare-mcp-check.json).
 
 ## O que foi medido
 

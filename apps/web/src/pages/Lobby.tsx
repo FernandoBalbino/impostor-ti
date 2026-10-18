@@ -290,7 +290,7 @@ export function Lobby() {
                 />
                 <button
                   className={`full big ${me?.ready ? 'secondary' : 'primary'}`}
-                  disabled={busy || selectedPowers.length !== 2}
+                  disabled={busy || selectedPowers.length !== 3}
                   onClick={() => void send({ type: 'player:ready', ready: !me?.ready, avatar })}
                 >
                   {me?.ready ? (
@@ -306,7 +306,7 @@ export function Lobby() {
                 <p className="subtle centered">
                   {me?.ready
                     ? 'Aguarde o professor iniciar a partida.'
-                    : 'Escolha seu personagem, dois poderes e avise que está pronto.'}
+                    : 'Escolha seu personagem, três poderes e avise que está pronto.'}
                 </p>
               </>
             )}

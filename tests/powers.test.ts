@@ -30,13 +30,14 @@ async function fixture(t: { after: (fn: () => void) => void }, options: Options 
   const send = (auth: typeof teacher, data: Record<string, unknown>) =>
     engine.execute(auth, {
       protocolVersion: PROTOCOL_VERSION,
+      ...(data.type==='vote:submit'?{ballotId:room.ballotId}:{}),
       ...data,
       requestId: data.requestId ?? randomUUID(),
     } as Command);
   for (let i = 0; i < players.length; i++) {
     send(players[i], {
       type: 'player:powers',
-      powers: options.loadouts?.[i] ?? ['double_vote', 'refuge'],
+      powers: [...(options.loadouts?.[i] ?? ['double_vote', 'refuge']), ...POWER_IDS.filter(id=>!(options.loadouts?.[i] ?? ['double_vote','refuge']).includes(id))].slice(0,3),
     });
     send(players[i], { type: 'player:ready', ready: true, avatar: i });
   }
@@ -83,7 +84,7 @@ async function fixture(t: { after: (fn: () => void) => void }, options: Options 
 const rejects = (fn: () => unknown, code: string) =>
   assert.throws(fn, (e: unknown) => e instanceof GameError && e.code === code);
 
-test('dois poderes distintos são obrigatórios e a escolha fica travada na partida', async (t) => {
+test('três poderes distintos são obrigatórios e a escolha fica travada na partida', async (t) => {
   const engine = new GameEngine();
   t.after(() => engine.close());
   const teacher = engine.create('t').auth;
@@ -91,6 +92,7 @@ test('dois poderes distintos são obrigatórios e a escolha fica travada na part
   const p = engine.join(room.code, 'Aluno', 0, 's').auth;
   const send = (data: Record<string, unknown>) =>
     engine.execute(p, {
+      ...(data.type==='vote:submit'?{ballotId:room.ballotId}:{}),
       ...data,
       requestId: randomUUID(),
       protocolVersion: PROTOCOL_VERSION,
@@ -98,16 +100,16 @@ test('dois poderes distintos são obrigatórios e a escolha fica travada na part
   rejects(() => send({ type: 'player:ready', ready: true, avatar: 0 }), 'CHOOSE_POWERS');
   rejects(() => send({ type: 'player:powers', powers: ['oracle', 'oracle'] }), 'INVALID_POWERS');
   rejects(
-    () => send({ type: 'player:powers', powers: ['oracle', 'aegis', 'refuge'] }),
+    () => send({ type: 'player:powers', powers: ['oracle', 'aegis', 'refuge', 'veil'] }),
     'INVALID_POWERS',
   );
-  send({ type: 'player:powers', powers: ['oracle', 'refuge'] });
+  send({ type: 'player:powers', powers: ['oracle', 'refuge', 'veil'] });
   send({ type: 'player:ready', ready: true, avatar: 0 });
-  send({ type: 'player:powers', powers: ['aegis', 'refuge'] });
+  send({ type: 'player:powers', powers: ['aegis', 'refuge', 'veil'] });
   assert.equal(room.players[0].ready, false);
   const s = await fixture(t);
   rejects(
-    () => s.send(s.players[0], { type: 'player:powers', powers: ['aegis', 'refuge'] }),
+    () => s.send(s.players[0], { type: 'player:powers', powers: ['aegis', 'refuge', 'veil'] }),
     'WRONG_PHASE',
   );
 });
@@ -434,19 +436,19 @@ test('nova partida mantém escolhas e limpa efeitos, recargas e resultados priva
   const state = s.state(0);
   assert.deepEqual(
     state.powers.map((p) => p.id),
-    ['oracle', 'aegis'],
+    ['oracle', 'aegis', 'silence'],
   );
   assert(state.powers.every((p) => !p.used && p.readyRound === 0));
   assert.deepEqual(state.notifications, []);
   assert.deepEqual(state.impostorIds, []);
   assert.equal(state.usedPowerRound, 0);
 });
-test('catálogo tem dez poderes distintos', () => assert.equal(new Set(POWER_IDS).size, 10));
+test('catálogo tem vinte poderes distintos', () => assert.equal(new Set(POWER_IDS).size, 20));
 
-test('vestígio é automático somente para os três impostores e não ocupa suas duas escolhas', async (t) => {
+test('vestígio é automático somente para os três impostores e não ocupa suas três escolhas', async (t) => {
   const s = await fixture(t, { impostors: 3 });
   for (let i = 0; i < 8; i++) {
-    assert.equal(s.state(i).powers.length, 2);
+    assert.equal(s.state(i).powers.length, 3);
     assert.deepEqual(
       s.state(i).exclusivePower,
       i < 3 ? { id: 'vestige', readyRound: 0, used: false } : null,
@@ -454,7 +456,7 @@ test('vestígio é automático somente para os três impostores e não ocupa sua
     assert.equal(s.state(i).vestigeLetter, null);
   }
   assert(!POWER_IDS.some((id: string) => id === 'vestige'));
-  assert.equal(ALL_POWER_IDS.length, 11);
+  assert.equal(ALL_POWER_IDS.length, 21);
   rejects(() => s.cast(3, 'vestige'), 'IMPOSTOR_ONLY');
 });
 

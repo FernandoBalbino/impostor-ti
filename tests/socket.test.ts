@@ -32,7 +32,7 @@ test('24 clientes, professor e telão: fases, isolamento, votos e reconexão rea
     const malformed = await players[0].raw({ type: 'player:ready', ready: true, avatar: 99 });
     assert.equal(malformed.ok, false);
     await Promise.all(
-      players.map((c) => c.send({ type: 'player:powers', powers: ['double_vote', 'refuge'] })),
+      players.map((c) => c.send({ type: 'player:powers', powers: ['double_vote', 'refuge', 'oracle'] })),
     );
     await Promise.all(
       players.map((c, i) => c.send({ type: 'player:ready', ready: true, avatar: i })),

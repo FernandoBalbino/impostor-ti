@@ -29,7 +29,7 @@ test('24 ativações simultâneas, anonimato, reconexão e repetição do mesmo 
     await display.send({ type: 'display:join', code });
     await until(() => teacher.room?.players.length === 24);
     await Promise.all(
-      players.map((c) => c.send({ type: 'player:powers', powers: ['refuge', 'oracle'] })),
+      players.map((c) => c.send({ type: 'player:powers', powers: ['refuge', 'oracle', 'veil'] })),
     );
     await Promise.all(
       players.map((c, i) => c.send({ type: 'player:ready', ready: true, avatar: i })),

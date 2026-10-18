@@ -15,8 +15,8 @@ function setup(n = 4, options: ConstructorParameters<typeof GameEngine>[0] = {})
     (_, i) => engine.join(room.code, `Aluno ${i + 1}`, i % 24, `s${i}`).auth,
   );
   const command = (auth: Auth, cmd: Record<string, unknown>) =>
-    engine.execute(auth, { ...cmd, requestId: randomUUID() } as Command);
-  for (const p of players) command(p, { type: 'player:powers', powers: ['double_vote', 'refuge'] });
+    engine.execute(auth, { ...(cmd.type==='vote:submit'?{ballotId:room.ballotId}:{}), ...cmd, requestId: randomUUID() } as Command);
+  for (const p of players) command(p, { type: 'player:powers', powers: ['double_vote', 'refuge', 'oracle'] });
   const settings = () =>
     command(teacher, {
       type: 'teacher:settings',

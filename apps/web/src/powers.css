@@ -466,3 +466,33 @@
     700 10px/13px Pixelify,
     monospace;
 }
+
+.skip-vote {
+  margin-top: 8px;
+}
+.ranking-abstentions {
+  text-align: center;
+  font-size: 12px;
+  color: #b8cce6;
+  margin: 0 0 12px;
+}
+.equipped-powers {
+  flex-wrap: wrap;
+}
+@media (max-width: 600px) {
+  .power-tray {
+    gap: 8px;
+  }
+  .equipped-powers {
+    gap: 7px;
+  }
+  .equipped-powers .power-option-wrap {
+    width: 46px;
+    max-width: 22%;
+  }
+}
+
+.immune-mark {
+  color: #ffda73;
+  font-size: 8px;
+}

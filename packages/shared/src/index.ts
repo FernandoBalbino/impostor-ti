@@ -6,7 +6,8 @@ export const CATEGORIES = [
   'Conceitos básicos',
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
-export const PROTOCOL_VERSION = 3 as const;
+export const PROTOCOL_VERSION = 4 as const;
+export const LOADOUT_SIZE = 3;
 export const POWER_IDS = [
   'silence',
   'letter',
@@ -18,6 +19,16 @@ export const POWER_IDS = [
   'refuge',
   'erase',
   'veil',
+  'labyrinth',
+  'dice',
+  'pandora',
+  'name_swap',
+  'all_or_nothing',
+  'void_eye',
+  'divine_hand',
+  'chosen',
+  'confusion',
+  'prometheus',
 ] as const;
 export const IMPOSTOR_POWER_ID = 'vestige' as const;
 export const ALL_POWER_IDS = [...POWER_IDS, IMPOSTOR_POWER_ID] as const;
@@ -33,6 +44,75 @@ export const POWERS: Record<
     exclusive?: 'impostor';
   }
 > = {
+  labyrinth: {
+    name: 'Labirinto das Palavras',
+    description: 'A próxima dica verdadeira do alvo deve conter uma de três palavras sorteadas.',
+    target: 'other',
+    window: 'clues',
+  },
+  dice: {
+    name: 'Dado de Dionísio',
+    description:
+      'Sorteia o peso do voto de outro jogador entre 0 e 3 nesta rodada. Peso da Verdade multiplica esse valor por dois.',
+    target: 'other',
+    window: 'active',
+  },
+  pandora: {
+    name: 'Caixa de Pandora',
+    description:
+      'Na próxima rodada vira outro poder comum, disponível imediatamente e com recarga de duas rodadas. A transformação dura até o fim da partida.',
+    target: 'self',
+    window: 'active',
+  },
+  name_swap: {
+    name: 'Close Falso',
+    description:
+      'Troca seu nome com o de outro jogador para toda a turma durante a próxima rodada. Os avatares permanecem.',
+    target: 'other',
+    window: 'active',
+  },
+  all_or_nothing: {
+    name: 'Tudo ou Nada',
+    description:
+      'Antes da votação, agenda frases aleatórias no lugar da sua dica e das dicas de dois outros jogadores até terminar a rodada.',
+    target: 'self',
+    window: 'active',
+  },
+  void_eye: {
+    name: 'Olho do Vazio',
+    description:
+      'Na próxima rodada o alvo não poderá ver as dicas dos outros, inclusive pelo histórico.',
+    target: 'other',
+    window: 'active',
+  },
+  divine_hand: {
+    name: 'Mão Divina',
+    description:
+      'Suspende um dos três poderes comuns do alvo nesta rodada e na próxima. Não afeta o poder exclusivo do impostor.',
+    target: 'other',
+    window: 'active',
+  },
+  chosen: {
+    name: 'O Escolhido',
+    description:
+      'Antes de abrir a votação, protege você ou outro jogador de receber votos durante esta rodada, incluindo desempates.',
+    target: 'any',
+    window: 'active',
+  },
+  confusion: {
+    name: 'Confusão',
+    description:
+      'Somente o alvo vê os nomes embaralhados durante as votações desta rodada. Os avatares permanecem.',
+    target: 'other',
+    window: 'active',
+  },
+  prometheus: {
+    name: 'Fogo de Prometeu',
+    description:
+      'Remove de você ou de outro jogador um efeito hostil aleatório, inclusive um efeito já agendado.',
+    target: 'any',
+    window: 'active',
+  },
   silence: {
     name: 'Silêncio do Inocente',
     description: 'Impede outro jogador de escrever e enviar uma dica por 20 segundos.',
@@ -121,11 +201,20 @@ export interface PlayerEffects {
   doubleVoteRound: number;
   bannedVoteRound: number;
   hiddenImageRounds: number[];
+  labyrinthWords: string[];
+  dice: { round: number; value: number } | null;
+  blindRound: number;
+  chosenRound: number;
+  confusion: { round: number; order: string[] } | null;
+  chaos: { round: number; text: string } | null;
 }
 export interface PowerSlot {
   id: PowerId;
   readyRound: number;
   used: boolean;
+  cooldown?: number;
+  blockedUntilRound?: number;
+  pendingRound?: number;
 }
 export interface PowerNotice {
   id: number;
@@ -179,6 +268,7 @@ export interface VoteResult {
   runoff: boolean;
   noVotes: boolean;
   protectedId: string | null;
+  abstentions?: number;
 }
 export interface RoundHistory {
   round: number;
@@ -200,6 +290,8 @@ export interface PublicRoom {
   category: Category | null;
   candidates: string[];
   voteResult: VoteResult | null;
+  ballotId: string | null;
+  immuneIds: string[];
   history: RoundHistory[];
   eliminations: { playerId: string; name: string; round: number }[];
   result: { winner: Winner; impostorIds: string[]; word: WordCard } | null;
@@ -210,6 +302,7 @@ export type PrivateState =
       word: WordCard | null;
       impostorIds: string[];
       manualImpostorIds: string[];
+      identities: { id: string; name: string }[];
     }
   | {
       kind: 'player';
@@ -225,6 +318,7 @@ export type PrivateState =
       clueSubmitted: boolean;
       clueDeadline: number | null;
       notifications: PowerNotice[];
+      ballot: { ballotId: string; targetId: string | null } | null;
     }
   | { kind: 'display' };
 export interface Session {
@@ -270,7 +364,7 @@ export type CommandInput =
       requestId: string;
     }
   | { type: 'clue:submit'; text: string; requestId: string }
-  | { type: 'vote:submit'; targetId: string; requestId: string };
+  | { type: 'vote:submit'; targetId: string | null; ballotId: string; requestId: string };
 export type Command = (
   | CommandInput
   | { type: 'player:powers'; powers: PowerId[]; requestId: string }

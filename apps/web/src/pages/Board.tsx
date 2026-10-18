@@ -33,6 +33,8 @@ const PlayerTile = memo(function PlayerTile({
   resultCount,
   isMe,
   ally,
+  clueHidden,
+  immune,
 }: {
   player: PublicPlayer;
   index: number;
@@ -43,22 +45,27 @@ const PlayerTile = memo(function PlayerTile({
   resultCount: number | null;
   isMe: boolean;
   ally: boolean;
+  clueHidden: boolean;
+  immune: boolean;
 }) {
-  const pending = phase === 'CLUES' && player.alive && player.clue === null;
-  const text = player.spectator
-    ? 'Assistindo'
-    : !player.alive
-      ? 'Eliminado'
-      : phase === 'VOTING'
-        ? (player.clue ?? 'Sem dica')
-        : (player.clue ??
-          (['CLUES', 'ROLE_REVEAL'].includes(phase)
-            ? ''
-            : phase === 'LOBBY'
-              ? 'Na sala'
-              : 'Sem dica'));
+  const pending = !clueHidden && phase === 'CLUES' && player.alive && player.clue === null;
+  const text = clueHidden
+    ? 'Dica oculta · Olho do Vazio'
+    : player.spectator
+      ? 'Assistindo'
+      : !player.alive
+        ? 'Eliminado'
+        : phase === 'VOTING'
+          ? (player.clue ?? 'Sem dica')
+          : (player.clue ??
+            (['CLUES', 'ROLE_REVEAL'].includes(phase)
+              ? ''
+              : phase === 'LOBBY'
+                ? 'Na sala'
+                : 'Sem dica'));
   return (
     <button
+      title={immune ? 'O Escolhido: não pode receber votos nesta rodada' : undefined}
       className={`player-tile ${ally ? 'impostor-ally' : ''} ${!player.alive ? 'eliminated' : ''} ${selectable ? 'selectable' : ''} ${selected ? 'suspect' : ''} ${player.clue ? 'answered' : ''}`}
       disabled={!selectable}
       onClick={() => onSelect(player.id)}
@@ -72,10 +79,11 @@ const PlayerTile = memo(function PlayerTile({
       <span className="player-message">
         <span className="player-name" title={player.name}>
           {player.name}
+          {immune && <small className="immune-mark"> · Protegido de votos</small>}
           {isMe && <small> você</small>}
           {ally && !isMe && <small className="ally-label">Aliado impostor</small>}
           {phase === 'VOTING' && player.voted && (
-            <span className="voted-marker" title="Voto confirmado">
+            <span className="voted-marker" title="Resposta confirmada">
               <CheckIcon />
             </span>
           )}
@@ -293,7 +301,11 @@ function SecretCard() {
                   (p) =>
                     privateState?.kind === 'teacher' && privateState.impostorIds.includes(p.id),
                 )
-                .map((p) => p.name)
+                .map((p) =>
+                  privateState?.kind === 'teacher'
+                    ? (privateState.identities.find((i) => i.id === p.id)?.name ?? p.name)
+                    : p.name,
+                )
                 .join(', ')}
             </strong>
           )}
@@ -398,6 +410,7 @@ export function GameBoard({ tools }: { tools: ReactNode }) {
   const [now, setNow] = useState(Date.now());
   const [clue, setClue] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
+  const [skipConfirm, setSkipConfirm] = useState(false);
   const [history, setHistory] = useState(false);
   const [dismissedRanking, setDismissedRanking] = useState('');
   const [reviewRanking, setReviewRanking] = useState('');
@@ -417,6 +430,7 @@ export function GameBoard({ tools }: { tools: ReactNode }) {
   useEffect(() => {
     setClue('');
     setSelected(null);
+    setSkipConfirm(false);
   }, [state.round, state.phase]);
   const teacher = privateState?.kind === 'teacher';
   const display = privateState?.kind === 'display';
@@ -459,10 +473,17 @@ export function GameBoard({ tools }: { tools: ReactNode }) {
         voteAllowed &&
         p.alive &&
         p.id !== me?.id &&
+        !state.immuneIds.includes(p.id) &&
         (!state.candidates.length || state.candidates.includes(p.id))
       }
       onSelect={setSelected}
       resultCount={showCounts ? (state.voteResult!.counts[p.id] ?? 0) : null}
+      clueHidden={
+        playerState?.effects.blindRound === state.round &&
+        p.id !== me?.id &&
+        !['GAME_OVER', 'WAITING_FOR_NEXT_ROUND'].includes(state.phase)
+      }
+      immune={state.immuneIds.includes(p.id)}
       isMe={p.id === me?.id}
       ally={
         !!playerState && playerState.role === 'impostor' && playerState.impostorIds.includes(p.id)
@@ -554,7 +575,7 @@ export function GameBoard({ tools }: { tools: ReactNode }) {
               <strong>
                 {voting ? voteCount : clueCount}/{voting ? state.eligibleVoters : alive.length}
               </strong>{' '}
-              {voting ? 'votantes confirmados' : 'dicas enviadas'}
+              {voting ? 'respostas confirmadas' : 'dicas enviadas'}
             </p>
           </div>
           <SecretCard />
@@ -576,7 +597,12 @@ export function GameBoard({ tools }: { tools: ReactNode }) {
                 <p>
                   {me?.voted ? (
                     <>
-                      <CheckIcon /> Voto confirmado. Aguarde o professor.
+                      <CheckIcon />{' '}
+                      {playerState?.ballot?.ballotId === state.ballotId &&
+                      playerState.ballot.targetId === null
+                        ? 'Você pulou esta votação.'
+                        : 'Voto confirmado.'}{' '}
+                      Aguarde o professor.
                     </>
                   ) : playerState?.effects.bannedVoteRound === state.round ? (
                     'Exílio do Veredito: você não poderá votar nesta rodada.'
@@ -587,21 +613,35 @@ export function GameBoard({ tools }: { tools: ReactNode }) {
                   )}
                 </p>
                 {voteAllowed && (
-                  <button
-                    className="primary full"
-                    disabled={!selected || busy}
-                    onClick={() => {
-                      if (selected)
-                        void send({ type: 'vote:submit', targetId: selected }).then((ok) => {
-                          if (ok) setSelected(null);
-                        });
-                    }}
-                  >
-                    <CheckIcon />{' '}
-                    {selected
-                      ? `Confirmar voto em ${state.players.find((p) => p.id === selected)?.name}`
-                      : 'Selecione um suspeito'}
-                  </button>
+                  <>
+                    <button
+                      className="primary full"
+                      disabled={!selected || busy}
+                      onClick={() => {
+                        if (selected)
+                          void send({
+                            type: 'vote:submit',
+                            targetId: selected,
+                            ballotId: state.ballotId!,
+                          }).then((ok) => {
+                            if (ok) setSelected(null);
+                          });
+                      }}
+                    >
+                      <CheckIcon />{' '}
+                      {selected
+                        ? `Confirmar voto em ${state.players.find((p) => p.id === selected)?.name}`
+                        : 'Selecione um suspeito'}
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary full skip-vote"
+                      disabled={busy}
+                      onClick={() => setSkipConfirm(true)}
+                    >
+                      Pular voto
+                    </button>
+                  </>
                 )}
               </>
             ) : state.phase === 'CLUES' ? (
@@ -662,6 +702,35 @@ export function GameBoard({ tools }: { tools: ReactNode }) {
         </section>
       </div>
       <PowerNotifications />
+      {skipConfirm && voteAllowed && (
+        <Modal title="Pular esta votação?" onClose={() => setSkipConfirm(false)}>
+          <p>
+            Você não votará em ninguém. Depois de confirmar, não poderá mudar sua resposta nesta
+            votação.
+          </p>
+          <div className="dialog-actions">
+            <button className="secondary" onClick={() => setSkipConfirm(false)}>
+              Cancelar
+            </button>
+            <button
+              className="primary"
+              disabled={busy}
+              onClick={() =>
+                void send({ type: 'vote:submit', targetId: null, ballotId: state.ballotId! }).then(
+                  (ok) => {
+                    if (ok) {
+                      setSkipConfirm(false);
+                      setSelected(null);
+                    }
+                  },
+                )
+              }
+            >
+              Confirmar e pular
+            </button>
+          </div>
+        </Modal>
+      )}
       {showRanking && (
         <VoteResultsModal
           key={rankingKey}

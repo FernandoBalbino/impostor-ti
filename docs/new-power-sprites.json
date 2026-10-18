@@ -1,0 +1,66 @@
+{
+  "tool": "image_gen.imagegen",
+  "prompt": "Single original crisp 16-bit pixel art ability sprite, dark outline, vivid limited palette, transparent background, centered, readable at 48px, no frame/text/logo/watermark.",
+  "assets": [
+    {
+      "id": "labyrinth",
+      "subject": "a winding golden miniature labyrinth with three turquoise alphabet tiles",
+      "original": "power-sprites/labyrinth.png",
+      "optimized": "assets/powers/labyrinth.webp"
+    },
+    {
+      "id": "dice",
+      "subject": "a violet six-sided magical die with bright golden pips and small violet sparks",
+      "original": "power-sprites/dice.png",
+      "optimized": "assets/powers/dice.webp"
+    },
+    {
+      "id": "pandora",
+      "subject": "an open ornate golden Pandora chest releasing turquoise violet and amber light",
+      "original": "power-sprites/pandora.png",
+      "optimized": "assets/powers/pandora.webp"
+    },
+    {
+      "id": "name_swap",
+      "subject": "two small ivory nameplates exchanging positions with turquoise curved arrows, no readable words",
+      "original": "power-sprites/name_swap.png",
+      "optimized": "assets/powers/name_swap.webp"
+    },
+    {
+      "id": "all_or_nothing",
+      "subject": "three parchment scrolls surrounded by violet and orange chaotic magical sparks",
+      "original": "power-sprites/all_or_nothing.png",
+      "optimized": "assets/powers/all_or_nothing.webp"
+    },
+    {
+      "id": "void_eye",
+      "subject": "a dark purple eye inside a blue black swirling vortex",
+      "original": "power-sprites/void_eye.png",
+      "optimized": "assets/powers/void_eye.webp"
+    },
+    {
+      "id": "divine_hand",
+      "subject": "a golden divine hand holding and binding a small purple magical rune in golden chains",
+      "original": "power-sprites/divine_hand.png",
+      "optimized": "assets/powers/divine_hand.webp"
+    },
+    {
+      "id": "chosen",
+      "subject": "a golden crowned star inside a turquoise shield with golden laurels",
+      "original": "power-sprites/chosen.png",
+      "optimized": "assets/powers/chosen.webp"
+    },
+    {
+      "id": "confusion",
+      "subject": "two small theatrical masks surrounded by violet turquoise circular arrows",
+      "original": "power-sprites/confusion.png",
+      "optimized": "assets/powers/confusion.webp"
+    },
+    {
+      "id": "prometheus",
+      "subject": "a vivid orange and turquoise flame breaking dark iron chains",
+      "original": "power-sprites/prometheus.png",
+      "optimized": "assets/powers/prometheus.webp"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # Impostor TI
 
-Um laboratório, uma palavra secreta, dez poderes estratégicos, uma habilidade exclusiva dos impostores e **um a três impostores**. Jogo de dedução social para uma turma de até **24 alunos individuais**, com o professor controlando a investigação em tempo real.
+Um laboratório, uma palavra secreta, vinte poderes estratégicos, uma habilidade exclusiva dos impostores e **um a três impostores**. Jogo de dedução social para uma turma de até **24 alunos individuais**, com o professor controlando a investigação em tempo real.
 
 - **Jogar:** https://fernandobalbino.github.io/impostor-ti/
 - **Servidor:** https://impostor-ti-api.onrender.com/health
@@ -14,7 +14,7 @@ Um laboratório, uma palavra secreta, dez poderes estratégicos, uma habilidade 
 ## Como jogar
 
 1. O professor escolhe **Sou professor**, cria a sala e compartilha o código de seis caracteres.
-2. Cada aluno escolhe **Jogar**, informa código e nome, personaliza o personagem, escolhe **dois poderes diferentes** e marca **Estou pronto**. Não é necessário cadastro.
+2. Cada aluno escolhe **Jogar**, informa código e nome, personaliza o personagem, escolhe **três poderes diferentes** e marca **Estou pronto**. Não é necessário cadastro.
 3. O professor seleciona categorias, tempo, **1–3 impostores** e o modo de escolha, salva as configurações e inicia com todos conectados e prontos. Os mínimos são 3, 5 e 7 alunos, respectivamente.
 4. Os civis recebem a palavra e a imagem. O impostor recebe somente a categoria e precisa blefar. Após seis segundos de revelação privada, todos os vivos podem escrever uma dica de até 80 caracteres.
 5. A coleta termina ao esgotar o prazo ou quando todos respondem. A votação só começa quando o professor clica em **Abrir votação**.
@@ -22,7 +22,9 @@ Um laboratório, uma palavra secreta, dez poderes estratégicos, uma habilidade 
 7. O mais votado é eliminado. Um empate permite um desempate controlado pelo professor entre os empatados. Todos os vivos votam, sem voto próprio. Novo empate ou ausência de votos não elimina ninguém.
 8. Se a partida continuar, o professor inicia outra rodada com a mesma palavra. Eliminados assistem sem dar dicas, votar ou ativar poderes. Civis vencem ao eliminar todos os impostores; impostores vencem quando igualam ou superam os civis vivos. Os aliados são sinalizados em vermelho somente para os impostores.
 
-Os poderes ficam travados até o fim da partida: apenas uma ativação por rodada, recarga independente de quatro rodadas e Égide de uso único. O alvo recebe um aviso anônimo sobre o efeito. Consulte [poderes e regras completas](docs/POWERS.md).
+O aluno pode confirmar **Pular voto**, inclusive no desempate. A abstenção confirma sua participação e não disputa a eliminação; só o total é divulgado após a apuração.
+
+Os poderes ficam travados até o fim da partida: apenas uma ativação por rodada, recarga normal de quatro rodadas e Égide de uso único. Caixa de Pandora transforma um espaço na rodada seguinte, com recarga de duas rodadas; a seleção original retorna ao lobby. O alvo recebe um aviso anônimo sobre o efeito. Consulte [poderes e regras completas](docs/POWERS.md).
 
 Após o resultado, **Iniciar nova partida** volta ao lobby, preserva nomes e personagens, restaura os eliminados, limpa o histórico e exige nova preparação. A próxima palavra será diferente da anterior. Espectadores conectados podem ocupar vagas disponíveis na partida seguinte.
 

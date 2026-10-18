@@ -48,7 +48,7 @@ for (let i = 0; i < names.length; i++) {
   clients.push(c);
   await c.connect();
   await c.send({ type: 'room:join', code, name: names[i], avatar: i });
-  await c.send({ type: 'player:powers', powers: ['double_vote', 'refuge'] });
+  await c.send({ type: 'player:powers', powers: ['double_vote', 'refuge', 'oracle'] });
   await c.send({ type: 'player:ready', ready: true, avatar: i });
   let round = 0;
   let ready = true;

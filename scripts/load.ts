@@ -53,7 +53,7 @@ try {
       await phase('LOBBY');
     }
     await Promise.all(
-      students.map((c) => c.send({ type: 'player:powers', powers: ['double_vote', 'refuge'] })),
+      students.map((c) => c.send({ type: 'player:powers', powers: ['double_vote', 'refuge', 'oracle'] })),
     );
     await Promise.all(
       students.map((c, i) => c.send({ type: 'player:ready', ready: true, avatar: i })),

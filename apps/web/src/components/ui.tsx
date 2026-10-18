@@ -120,11 +120,13 @@ export function HowTo({ onClose }: { onClose: () => void }) {
         </li>
       </ol>
       <p>
-        Escolha dois poderes no lobby. Use apenas um por rodada. Cada poder volta quatro rodadas
-        após o uso; Égide do Destino só pode ser ativada uma vez por partida.
+        Escolha três poderes no lobby. Use apenas um por rodada. A recarga normal é de quatro
+        rodadas; poderes recebidos pela Caixa de Pandora recarregam em duas. Égide do Destino só
+        pode ser ativada uma vez por partida.
       </p>
       <p className="subtle">
-        Cada aluno joga individualmente. Quem é eliminado continua assistindo.
+        Você também pode pular o voto: sua resposta será confirmada sem votar em ninguém. Cada aluno
+        joga individualmente. Quem é eliminado continua assistindo.
       </p>
       <button className="primary full" onClick={onClose}>
         Entendi, vamos jogar <ArrowRightIcon />

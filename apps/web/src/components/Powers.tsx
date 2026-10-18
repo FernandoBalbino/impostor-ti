@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ACTIVE_POWER_PHASES,
   POWER_IDS,
+  LOADOUT_SIZE,
   POWERS,
   type PowerId,
   type PowerNotice,
@@ -17,7 +18,23 @@ function PowerIcon({ id }: { id: PowerId }) {
     <img src={asset(`assets/powers/${id}.webp`)} alt="" draggable={false} width={64} height={64} />
   );
 }
-function Tooltip({ id, children }: { id: PowerId; children?: ReactNode }) {
+const windowLabel = (id: PowerId) =>
+  id === 'chosen'
+    ? 'Antes de abrir a votação ou o desempate'
+    : id === 'all_or_nothing'
+      ? 'Prazo normal das dicas e conversa'
+      : POWERS[id].window === 'clues'
+        ? 'Durante o prazo normal das dicas'
+        : 'Dicas, conversa e votação';
+function Tooltip({
+  id,
+  children,
+  cooldown = 4,
+}: {
+  id: PowerId;
+  children?: ReactNode;
+  cooldown?: number;
+}) {
   const p = POWERS[id];
   return (
     <span className="power-tooltip" role="tooltip">
@@ -25,8 +42,7 @@ function Tooltip({ id, children }: { id: PowerId; children?: ReactNode }) {
       {p.exclusive && <b className="exclusive-label">Exclusivo do impostor · automático</b>}
       <span>{p.description}</span>
       <small>
-        {p.window === 'clues' ? 'Durante o prazo normal das dicas' : 'Dicas, conversa e votação'} ·{' '}
-        {p.once ? 'Uso único na partida' : 'Recarga: 4 rodadas'}
+        {windowLabel(id)} · {p.once ? 'Uso único na partida' : 'Recarga: ' + cooldown + ' rodadas'}
       </small>
       {children}
     </span>
@@ -44,15 +60,15 @@ export function PowerPicker({
   const [detail, setDetail] = useState<PowerId | null>(null);
   const toggle = (id: PowerId) => {
     if (value.includes(id)) onChange(value.filter((p) => p !== id));
-    else if (value.length < 2) onChange([...value, id]);
+    else if (value.length < LOADOUT_SIZE) onChange([...value, id]);
   };
   return (
     <section className="power-picker" aria-label="Escolha seus poderes">
       <div className="power-picker-heading">
         <span>
-          <LightningIcon weight="fill" /> Escolha dois poderes
+          <LightningIcon weight="fill" /> Escolha três poderes
         </span>
-        <strong>{value.length}/2 poderes</strong>
+        <strong>{value.length}/3 poderes</strong>
       </div>
       <div className="power-grid">
         {POWER_IDS.map((id) => (
@@ -79,20 +95,18 @@ export function PowerPicker({
           </div>
           <p>{POWERS[detail].description}</p>
           <p className="subtle">
-            {POWERS[detail].window === 'clues'
-              ? 'Ative durante o prazo normal das dicas.'
-              : 'Ative nas etapas de dicas, conversa ou votação.'}{' '}
+            {windowLabel(detail) + '.'}{' '}
             {POWERS[detail].once ? 'Uma vez por partida.' : 'Volta quatro rodadas após o uso.'}
           </p>
-          {value.length === 2 && !value.includes(detail) && (
+          {value.length === LOADOUT_SIZE && !value.includes(detail) && (
             <p className="power-warning">
-              Desmarque um dos dois poderes escolhidos para selecionar este.
+              Desmarque um dos três poderes escolhidos para selecionar este.
             </p>
           )}
           <button
             type="button"
             className="primary full"
-            disabled={disabled || (value.length === 2 && !value.includes(detail))}
+            disabled={disabled || (value.length === LOADOUT_SIZE && !value.includes(detail))}
             onClick={() => {
               toggle(detail);
               setDetail(null);
@@ -114,6 +128,16 @@ function unavailable(
   now: number,
 ) {
   if (!connected) return 'Aguarde a conexão ser restabelecida.';
+  if (slot.pendingRound) return 'Transformação agendada para a rodada ' + slot.pendingRound + '.';
+  if ((slot.blockedUntilRound ?? 0) >= room.round && !!slot.blockedUntilRound)
+    return 'Suspenso até a rodada ' + (slot.blockedUntilRound! + 1) + '.';
+  if (slot.id === 'chosen' && room.phase === 'VOTING') return 'Ative antes de abrir a votação.';
+  if (
+    slot.id === 'all_or_nothing' &&
+    room.phase !== 'WAITING_FOR_VOTE' &&
+    !(room.phase === 'CLUES' && now < (room.clueDeadline ?? 0))
+  )
+    return 'Agende antes da primeira votação, nas dicas ou conversa.';
   if (POWERS[slot.id].once && slot.used) return 'Este poder já foi usado nesta partida.';
   if (slot.readyRound > room.round) return `Disponível na rodada ${slot.readyRound}.`;
   if (usedRound === room.round) return 'Você já ativou um poder nesta rodada.';
@@ -165,6 +189,15 @@ export function PowerTray({ now }: { now: number }) {
         ? `Reenvio · ${Math.ceil((state.clueDeadline - now) / 1000)}s`
         : 'Prazo de reenvio encerrado',
     );
+  if (effects.labyrinthWords.length)
+    notices.push('Inclua na próxima dica: ' + effects.labyrinthWords.join(' / '));
+  if (effects.dice?.round === room.round)
+    notices.push(
+      'Seu voto vale ' + effects.dice.value + (effects.doubleVoteRound === room.round ? ' ×2' : ''),
+    );
+  if (effects.blindRound === room.round) notices.push('Dicas dos outros ocultas nesta rodada');
+  if (effects.chosenRound === room.round) notices.push('Você não pode receber votos nesta rodada');
+  if (effects.confusion?.round === room.round) notices.push('Nomes embaralhados durante a votação');
   return (
     <>
       <div className="power-tray" aria-label="Seus poderes">
@@ -175,6 +208,7 @@ export function PowerTray({ now }: { now: number }) {
           {slots.map((p) => {
             const why = unavailable(room, p, state.usedPowerRound, connected, now);
             const spent = !!POWERS[p.id].once && p.used;
+            const suspended = Math.max(0, (p.blockedUntilRound ?? -1) - room.round + 1);
             const count = Math.max(0, p.readyRound - room.round);
             const recent = state.notifications.at(-1);
             return (
@@ -198,7 +232,11 @@ export function PowerTray({ now }: { now: number }) {
                       I
                     </span>
                   )}
-                  {spent ? (
+                  {suspended > 0 ? (
+                    <span className="power-counter">{suspended}</span>
+                  ) : p.pendingRound ? (
+                    <span className="power-counter spent">Em breve</span>
+                  ) : spent ? (
                     <span className="power-counter spent">Usado</span>
                   ) : count > 0 ? (
                     <span className="power-counter">{count}</span>
@@ -206,7 +244,7 @@ export function PowerTray({ now }: { now: number }) {
                     why && <span className="power-lock">•</span>
                   )}
                 </button>
-                <Tooltip id={p.id}>
+                <Tooltip id={p.id} cooldown={p.cooldown ?? 4}>
                   <b>{why || 'Disponível · um poder por rodada'}</b>
                 </Tooltip>
               </div>
@@ -233,9 +271,15 @@ export function PowerTray({ now }: { now: number }) {
             </p>
           )}
           <p className="subtle">
-            {def.once
-              ? 'Uma ativação nesta partida.'
-              : 'Após ativar, este poder volta na rodada ' + (room.round + 4) + '.'}{' '}
+            {selected === 'pandora'
+              ? 'Na rodada ' +
+                (room.round + 1) +
+                ', esta caixa será substituída por um poder com recarga de duas rodadas.'
+              : def.once
+                ? 'Uma ativação nesta partida.'
+                : 'Após ativar, este poder volta na rodada ' +
+                  (room.round + (slot.cooldown ?? 4)) +
+                  '.'}{' '}
             Só um poder por rodada.
           </p>
           {error && (
@@ -258,7 +302,14 @@ export function PowerTray({ now }: { now: number }) {
                     <option value="">Selecione um jogador</option>
                     {room.players
                       .filter(
-                        (p) => p.alive && !p.spectator && (def.target === 'any' || p.id !== me.id),
+                        (p) =>
+                          p.alive &&
+                          !p.spectator &&
+                          (def.target === 'any' || p.id !== me.id) &&
+                          (!['dice', 'ban_vote'].includes(selected!) ||
+                            room.phase !== 'VOTING' ||
+                            !p.voted) &&
+                          (selected !== 'chosen' || !room.immuneIds.includes(p.id)),
                       )
                       .map((p) => (
                         <option value={p.id} key={p.id}>

@@ -66,6 +66,9 @@ export class Client {
     const result: Ack = await this.socket.timeout(15000).emitWithAck('command', {
       protocolVersion: PROTOCOL_VERSION,
       ...data,
+      ...(data.type === 'vote:submit' && !('ballotId' in data)
+        ? { ballotId: this.room?.ballotId }
+        : {}),
       requestId: data.requestId ?? randomUUID(),
     } as Command);
     this.latencies.push(performance.now() - start);

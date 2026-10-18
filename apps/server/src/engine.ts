@@ -2,6 +2,7 @@ import { randomBytes, randomInt } from 'node:crypto';
 import {
   CATEGORIES,
   POWER_IDS,
+  LOADOUT_SIZE,
   IMPOSTOR_POWER_ID,
   POWERS,
   ACTIVE_POWER_PHASES,
@@ -20,6 +21,13 @@ import {
   type Command,
   type Session,
 } from '@impostor/shared';
+import {
+  prepareNewPower,
+  projectRoom,
+  roundLive,
+  finishEffects,
+  transformPowers,
+} from './power-effects.js';
 import { CATALOG } from './catalog.js';
 
 export class GameError extends Error {
@@ -42,7 +50,7 @@ export const normalize = (text: string) =>
     .trim()
     .replace(/\s+/g, ' ');
 const token = () => randomBytes(32).toString('base64url');
-type Player = PublicPlayer & {
+export type Player = PublicPlayer & {
   token: string;
   sockets: Set<string>;
   powers: PowerSlot[];
@@ -54,6 +62,7 @@ type Player = PublicPlayer & {
   rewriteUntil: number;
   notifications: PowerNotice[];
   noticeSequence: number;
+  originalPowers: PowerId[];
 };
 const freshEffects = (): PlayerEffects => ({
   silencedUntil: 0,
@@ -63,6 +72,12 @@ const freshEffects = (): PlayerEffects => ({
   doubleVoteRound: 0,
   bannedVoteRound: 0,
   hiddenImageRounds: [],
+  labyrinthWords: [],
+  dice: null,
+  blindRound: 0,
+  chosenRound: 0,
+  confusion: null,
+  chaos: null,
 });
 type CommandResult = { activation?: PowerNotice };
 export interface Auth {
@@ -86,7 +101,9 @@ export interface Room {
   deadline: number | null;
   clueDeadline: number | null;
   timer?: ReturnType<typeof setTimeout>;
-  votes: Map<string, string>;
+  votes: Map<string, { targetId: string | null; weight: number }>;
+  ballotId: string | null;
+  swaps: { a: string; b: string; round: number }[];
   candidates: string[];
   runoff: boolean;
   voteResult: VoteResult | null;
@@ -212,6 +229,8 @@ export class GameEngine {
       deadline: null,
       clueDeadline: null,
       votes: new Map(),
+      ballotId: null,
+      swaps: [],
       candidates: [],
       runoff: false,
       voteResult: null,
@@ -247,6 +266,7 @@ export class GameEngine {
       id: randomBytes(12).toString('hex'),
       token: token(),
       name,
+      originalPowers: [],
       avatar,
       online: true,
       ready: false,
@@ -303,8 +323,9 @@ export class GameEngine {
     }
     if (auth.kind !== 'display') this.touch(room);
   }
-  public(room: Room): PublicRoom {
-    return {
+  public(room: Room, auth?: Auth, base?: PublicRoom): PublicRoom {
+    if (base) return projectRoom(room, base, auth?.playerId);
+    const state: PublicRoom = {
       code: room.code,
       revision: room.revision,
       phase: room.phase,
@@ -331,11 +352,16 @@ export class GameEngine {
       ).length,
       category: room.word?.categoria ?? null,
       candidates: [...room.candidates],
+      ballotId: room.ballotId,
+      immuneIds: this.active(room)
+        .filter((p) => p.effects.chosenRound === room.round && roundLive(room))
+        .map((p) => p.id),
       voteResult: room.voteResult ? structuredClone(room.voteResult) : null,
       history: structuredClone(room.history),
       eliminations: structuredClone(room.eliminations),
       result: room.result ? structuredClone(room.result) : null,
     };
+    return projectRoom(room, state, auth?.playerId);
   }
   privateState(room: Room, auth: Auth): PrivateState {
     if (auth.kind === 'display') return { kind: 'display' };
@@ -346,6 +372,7 @@ export class GameEngine {
         word: room.word ? { ...room.word } : null,
         impostorIds: [...room.impostorIds],
         manualImpostorIds: [...room.manualImpostorIds],
+        identities: room.players.map((p) => ({ id: p.id, name: p.name })),
       };
     }
     const p = this.player(room, auth);
@@ -370,6 +397,10 @@ export class GameEngine {
       clueSubmitted: p.clue !== null,
       clueDeadline: room.phase === 'CLUES' ? p.rewriteUntil || room.clueDeadline : null,
       notifications: p.notifications.map((n) => ({ ...n })),
+      ballot:
+        room.ballotId && room.votes.has(p.id)
+          ? { ballotId: room.ballotId, targetId: room.votes.get(p.id)!.targetId }
+          : null,
     };
   }
   execute(auth: Auth, cmd: Command) {
@@ -387,8 +418,12 @@ export class GameEngine {
       case 'player:ready': {
         this.requirePhase(room, 'LOBBY');
         const p = this.player(room, auth);
-        if (cmd.ready && (p.powers.length !== 2 || new Set(p.powers.map((s) => s.id)).size !== 2))
-          fail('CHOOSE_POWERS', 'Escolha dois poderes diferentes antes de ficar pronto.');
+        if (
+          cmd.ready &&
+          (p.powers.length !== LOADOUT_SIZE ||
+            new Set(p.powers.map((s) => s.id)).size !== LOADOUT_SIZE)
+        )
+          fail('CHOOSE_POWERS', 'Escolha três poderes diferentes antes de ficar pronto.');
         p.avatar = cmd.avatar;
         p.ready = cmd.ready;
         break;
@@ -397,12 +432,13 @@ export class GameEngine {
         this.requirePhase(room, 'LOBBY');
         const p = this.player(room, auth);
         if (
-          cmd.powers.length > 2 ||
+          cmd.powers.length > LOADOUT_SIZE ||
           new Set(cmd.powers).size !== cmd.powers.length ||
           cmd.powers.some((id) => !POWER_IDS.some((available) => available === id))
         )
-          fail('INVALID_POWERS', 'Escolha até dois poderes diferentes.');
+          fail('INVALID_POWERS', 'Escolha até três poderes diferentes.');
         p.powers = cmd.powers.map((id) => ({ id, readyRound: 0, used: false }));
+        p.originalPowers = [...cmd.powers];
         p.ready = false;
         privateChanged = [p.id];
         break;
@@ -454,8 +490,8 @@ export class GameEngine {
           );
         if (alive.some((p) => !p.ready || !p.online))
           fail('NOT_READY', 'Todos os alunos precisam estar conectados e prontos.');
-        if (alive.some((p) => p.powers.length !== 2))
-          fail('CHOOSE_POWERS', 'Todos precisam escolher dois poderes.');
+        if (alive.some((p) => p.powers.length !== LOADOUT_SIZE))
+          fail('CHOOSE_POWERS', 'Todos precisam escolher três poderes.');
         if (
           room.settings.selectionMode === 'manual' &&
           (room.manualImpostorIds.length !== room.settings.impostorCount ||
@@ -509,6 +545,17 @@ export class GameEngine {
             'FORBIDDEN_LETTER',
             `Sua dica não pode conter a letra ${p.effects.forbiddenLetter}, mesmo acentuada.`,
           );
+        if (
+          p.effects.labyrinthWords.length &&
+          !p.effects.labyrinthWords.some((w) =>
+            (' ' + normalize(text) + ' ').includes(' ' + normalize(w) + ' '),
+          )
+        )
+          fail(
+            'LABYRINTH_WORD',
+            'Inclua uma destas palavras: ' + p.effects.labyrinthWords.join(', ') + '.',
+          );
+        p.effects.labyrinthWords = [];
         p.clue = text;
         p.fakeClue = null;
         p.effects.forbiddenLetter = null;
@@ -528,9 +575,11 @@ export class GameEngine {
         this.requirePhase(room, 'WAITING_FOR_VOTE', 'TIEBREAK');
         room.runoff = room.phase === 'TIEBREAK';
         room.phase = 'VOTING';
+        room.ballotId = randomBytes(12).toString('hex');
         room.votes.clear();
         room.players.forEach((p) => (p.voted = false));
         room.voteResult = null;
+        privateChanged = true;
         break;
       }
       case 'vote:submit': {
@@ -538,15 +587,27 @@ export class GameEngine {
         const p = this.eligible(room, auth);
         if (p.effects.bannedVoteRound === room.round)
           fail('VOTE_BANNED', 'Exílio do Veredito impede seu voto nesta rodada.');
+        if (cmd.ballotId !== room.ballotId)
+          fail('STALE_BALLOT', 'Esta votação já terminou. Atualize sua escolha.');
         if (room.votes.has(p.id)) fail('ALREADY_VOTED', 'Seu voto já foi confirmado.');
         if (cmd.targetId === p.id) fail('SELF_VOTE', 'Você não pode votar em si mesmo.');
         if (
-          !this.active(room).some((p) => p.id === cmd.targetId) ||
-          (room.runoff && !room.candidates.includes(cmd.targetId))
+          cmd.targetId !== null &&
+          (!this.active(room).some(
+            (p) => p.id === cmd.targetId && p.effects.chosenRound !== room.round,
+          ) ||
+            (room.runoff && !room.candidates.includes(cmd.targetId)))
         )
           fail('INVALID_TARGET', 'Escolha um suspeito elegível.');
-        room.votes.set(p.id, cmd.targetId);
+        const weight =
+          (p.effects.dice?.round === room.round ? p.effects.dice.value : 1) *
+          (p.effects.doubleVoteRound === room.round ? 2 : 1);
+        room.votes.set(p.id, {
+          targetId: cmd.targetId,
+          weight: cmd.targetId === null ? 0 : weight,
+        });
         p.voted = true;
+        privateChanged = [p.id];
         break;
       }
       case 'vote:close':
@@ -591,11 +652,13 @@ export class GameEngine {
           p.effects = freshEffects();
           p.exclusivePower = null;
           p.vestigeLetter = null;
-          p.powers = p.powers.map((s) => ({ id: s.id, readyRound: 0, used: false }));
+          p.powers = p.originalPowers.map((id) => ({ id, readyRound: 0, used: false }));
           p.usedPowerRound = 0;
           p.notifications = [];
         });
         room.votes.clear();
+        room.ballotId = null;
+        room.swaps = [];
         room.candidates = [];
         room.voteResult = null;
         room.history = [];
@@ -629,7 +692,12 @@ export class GameEngine {
     room.candidates = [];
     room.voteResult = null;
     room.runoff = false;
+    room.ballotId = null;
     room.votes.clear();
+    transformPowers(room, this.options.random ?? randomInt, (p, id, message) =>
+      this.notice(room, p, id, 'Caixa de Pandora transformada', message, 'success'),
+    );
+    room.swaps = room.swaps.filter((s) => s.round >= room.round);
     room.players.forEach((p) => {
       p.clue = null;
       p.voted = false;
@@ -680,10 +748,9 @@ export class GameEngine {
   }
   private closeVote(room: Room) {
     const counts: Record<string, number> = {};
-    for (const [voter, id] of room.votes)
-      counts[id] =
-        (counts[id] ?? 0) +
-        (room.players.find((p) => p.id === voter)!.effects.doubleVoteRound === room.round ? 2 : 1);
+    for (const ballot of room.votes.values())
+      if (ballot.targetId !== null && ballot.weight > 0)
+        counts[ballot.targetId] = (counts[ballot.targetId] ?? 0) + ballot.weight;
     const max = Math.max(0, ...Object.values(counts));
     const tied = Object.keys(counts).filter((id) => counts[id] === max);
     const result: VoteResult = {
@@ -693,6 +760,7 @@ export class GameEngine {
       runoff: room.runoff,
       noVotes: max === 0,
       protectedId: null,
+      abstentions: [...room.votes.values()].filter((v) => v.targetId === null).length,
     };
     const protectedPlayer = room.players.find(
       (p) => p.id === result.eliminatedId && p.effects.aegis,
@@ -725,9 +793,10 @@ export class GameEngine {
         else if (impostors >= civilians) this.finish(room, 'impostor');
         else
           this.schedule(room, this.options.resultMs ?? 2800, () => {
+            finishEffects(room);
             room.phase = 'WAITING_FOR_NEXT_ROUND';
             this.clearTimer(room);
-            this.touch(room);
+            this.touch(room, true);
           });
       } else if (result.tied.length > 1 && !room.runoff) {
         this.clearTimer(room);
@@ -736,6 +805,7 @@ export class GameEngine {
       } else {
         this.clearTimer(room);
         room.candidates = [];
+        finishEffects(room);
         room.phase = 'WAITING_FOR_NEXT_ROUND';
       }
       this.touch(room, true);
@@ -744,6 +814,7 @@ export class GameEngine {
   }
   private finish(room: Room, winner: 'civis' | 'impostor' | 'cancelada') {
     this.clearTimer(room);
+    finishEffects(room);
     room.phase = 'GAME_OVER';
     room.result = { winner, impostorIds: [...room.impostorIds], word: { ...room.word! } };
   }
@@ -801,6 +872,11 @@ export class GameEngine {
     if (actor.usedPowerRound === room.round)
       fail('ONE_POWER_PER_ROUND', 'Você já ativou um poder nesta rodada.');
     if (def.once && slot!.used) fail('POWER_SPENT', 'Este poder já foi usado nesta partida.');
+    if ((slot!.blockedUntilRound ?? 0) >= room.round)
+      fail(
+        'POWER_SUSPENDED',
+        'Mão Divina suspendeu este poder até a rodada ' + (slot!.blockedUntilRound! + 1) + '.',
+      );
     if (slot!.readyRound > room.round)
       fail('POWER_COOLDOWN', `Este poder volta na rodada ${slot!.readyRound}.`);
     const target =
@@ -861,11 +937,18 @@ export class GameEngine {
         if (e.hiddenImageRounds.includes(room.round + 1)) duplicate();
         break;
     }
+    const prepared = prepareNewPower(room, actor, to, cmd.powerId, slot!, {
+      now,
+      random: this.options.random ?? randomInt,
+      fail,
+      notice: (player, id, title, message, tone) =>
+        this.notice(room, player, id, title, message, tone),
+    });
     // Validation above is side-effect free. Every accepted attempt below is charged exactly once.
     actor.usedPowerRound = room.round;
     slot!.used = true;
-    slot!.readyRound = room.round + 4;
-    const changed = [...new Set([actor.id, to.id])];
+    slot!.readyRound = room.round + (slot!.cooldown ?? 4);
+    const changed = [...new Set([actor.id, to.id, ...(prepared?.changed ?? [])])];
     const hostile = def.target === 'other';
     if (hostile && e.refuge) {
       e.refuge = false;
@@ -901,19 +984,24 @@ export class GameEngine {
         e.silencedUntil = now + effectMs;
         if (to.rewriteUntil > now)
           to.rewriteUntil = Math.max(to.rewriteUntil, e.silencedUntil + effectMs);
-        message = `${to.name} não pode escrever dicas por 20 segundos.`;
+        message = `O jogador escolhido não pode escrever dicas por 20 segundos.`;
         targetMessage =
           'Você não pode escrever nem enviar dicas por 20 segundos. Seu rascunho foi preservado.';
         this.advanceClues(room);
         break;
       case 'letter':
-        e.forbiddenLetter = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[(this.options.random ?? randomInt)(26)];
-        message = `${to.name} não poderá usar a letra ${e.forbiddenLetter} na próxima dica verdadeira.`;
+        const letters = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].filter(
+          (l) =>
+            !e.labyrinthWords.length ||
+            e.labyrinthWords.some((w) => !normalize(w).includes(l.toLowerCase())),
+        );
+        e.forbiddenLetter = letters[(this.options.random ?? randomInt)(letters.length)];
+        message = `O jogador escolhido não poderá usar a letra ${e.forbiddenLetter} na próxima dica verdadeira.`;
         targetMessage = `Sua próxima dica verdadeira não pode conter a letra ${e.forbiddenLetter}, mesmo acentuada.`;
         break;
       case 'aegis':
         e.aegis = true;
-        message = `${to.name} está protegido contra a próxima eliminação.`;
+        message = `O jogador escolhido está protegido contra a próxima eliminação.`;
         targetMessage =
           'Você está protegido contra a próxima eliminação. O escudo permanece até ser consumido.';
         break;
@@ -923,13 +1011,13 @@ export class GameEngine {
         break;
       case 'ban_vote':
         e.bannedVoteRound = room.round;
-        message = `${to.name} não poderá votar nesta rodada.`;
+        message = `O jogador escolhido não poderá votar nesta rodada.`;
         targetMessage = 'Você não poderá votar nesta rodada, incluindo os desempates.';
         break;
       case 'oracle': {
         const success = (this.options.random ?? randomInt)(2) === 1;
         message = success
-          ? `${to.name}: ${room.impostorIds.includes(to.id) ? 'Impostor' : 'Civil'}.`
+          ? `O jogador escolhido: ${room.impostorIds.includes(to.id) ? 'Impostor' : 'Civil'}.`
           : 'A leitura falhou. Nenhum papel foi revelado.';
         targetMessage = success
           ? 'Uma consulta revelou seu papel a alguém. A identidade de quem consultou permanece secreta.'
@@ -939,7 +1027,7 @@ export class GameEngine {
       }
       case 'echo':
         to.fakeClue = fakeText;
-        message = `Uma dica falsa apareceu no nome de ${to.name}.`;
+        message = `Uma dica falsa apareceu no nome de O jogador escolhido.`;
         targetMessage =
           'Uma dica falsa apareceu no seu nome. Envie sua dica verdadeira para substituí-la.';
         break;
@@ -952,17 +1040,22 @@ export class GameEngine {
         to.clue = null;
         to.fakeClue = null;
         to.rewriteUntil = Math.max(now, e.silencedUntil) + effectMs;
-        message = `A dica de ${to.name} foi apagada. O alvo tem 20 segundos para reenviar.`;
+        message = `A dica de O jogador escolhido foi apagada. O alvo tem 20 segundos para reenviar.`;
         targetMessage =
           'Sua dica foi apagada. Você tem 20 segundos para reenviar; se estiver silenciado, o prazo começa após o silêncio.';
         this.advanceClues(room);
         break;
       case 'veil':
         e.hiddenImageRounds.push(room.round + 1);
-        message = `${to.name} ficará sem a imagem do item na próxima rodada.`;
+        message = `O jogador escolhido ficará sem a imagem do item na próxima rodada.`;
         targetMessage =
           'Na próxima rodada a imagem do item ficará oculta. O nome da palavra e as pistas continuam visíveis.';
         break;
+    }
+    if (prepared) {
+      const applied = prepared.apply();
+      message = applied.message;
+      targetMessage = applied.targetMessage ?? '';
     }
     const notice = this.notice(room, actor, cmd.powerId, `${def.name} ativado`, message, tone);
     if (to !== actor)
@@ -972,7 +1065,7 @@ export class GameEngine {
         cmd.powerId,
         `Você foi alvo de ${def.name}`,
         targetMessage,
-        cmd.powerId === 'aegis' ? 'success' : 'danger',
+        ['aegis', 'chosen', 'prometheus'].includes(cmd.powerId) ? 'success' : 'danger',
       );
     return { notice, changed };
   }

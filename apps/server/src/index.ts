@@ -38,6 +38,7 @@ export function createGameServer(
     },
   );
   const previous = new Map<string, PublicRoom>();
+  const views = new Map<string, PublicRoom>();
   const pending = new Map<string, ReturnType<typeof setTimeout>>();
   const histogram = monitorEventLoopDelay({ resolution: 20 });
   histogram.enable();
@@ -47,20 +48,42 @@ export function createGameServer(
     if (timer) clearTimeout(timer);
     pending.delete(room.code);
     const state = engine.public(room);
-    const old = previous.get(room.code);
-    const changes: Partial<PublicRoom> = {};
-    for (const key of Object.keys(state) as (keyof PublicRoom)[]) {
-      if (key !== 'revision' && (!old || JSON.stringify(state[key]) !== JSON.stringify(old[key])))
-        (changes as Record<string, unknown>)[key] = state[key];
-    }
     previous.set(room.code, state);
-    if (Object.keys(changes).length)
-      io.to(room.code).emit('update', {
-        code: room.code,
-        revision: room.revision,
-        changes,
-        serverTime: Date.now(),
-      });
+    const computed = new Map<string, PublicRoom>();
+    const diffs = new Map<PublicRoom | undefined, Map<PublicRoom, Partial<PublicRoom>>>();
+    for (const socketId of io.sockets.adapter.rooms.get(room.code) ?? []) {
+      const socket = io.sockets.sockets.get(socketId);
+      const auth = socket?.data.auth;
+      if (!socket || !auth) continue;
+      const key = room.code + ':' + auth.kind + ':' + (auth.playerId ?? '');
+      const current = computed.get(key) ?? engine.public(room, auth, state);
+      computed.set(key, current);
+      const old = views.get(key);
+      let byCurrent = diffs.get(old);
+      if (!byCurrent) {
+        byCurrent = new Map();
+        diffs.set(old, byCurrent);
+      }
+      let changes = byCurrent.get(current);
+      if (!changes) {
+        changes = {};
+        for (const field of Object.keys(current) as (keyof PublicRoom)[])
+          if (
+            field !== 'revision' &&
+            (!old || JSON.stringify(current[field]) !== JSON.stringify(old[field]))
+          )
+            (changes as Record<string, unknown>)[field] = current[field];
+        byCurrent.set(current, changes);
+      }
+      if (Object.keys(changes).length)
+        socket.emit('update', {
+          code: room.code,
+          revision: room.revision,
+          changes,
+          serverTime: Date.now(),
+        });
+    }
+    for (const [key, state] of computed) views.set(key, state);
   };
   const engine = new GameEngine({
     revealMs: options.revealMs,
@@ -102,6 +125,7 @@ export function createGameServer(
       if (timer) clearTimeout(timer);
       pending.delete(code);
       previous.delete(code);
+      for (const key of views.keys()) if (key.startsWith(code + ':')) views.delete(key);
       io.to(code).emit('removed', 'Esta sala foi encerrada por inatividade.');
     },
   });
@@ -116,10 +140,13 @@ export function createGameServer(
     res.json({
       status: 'ok',
       service: 'impostor-ti',
-      version: '2.1.0',
+      version: '2.2.0',
       protocolVersion: PROTOCOL_VERSION,
       release: process.env.RENDER_GIT_COMMIT?.slice(0, 7) ?? 'local',
       rooms: engine.rooms.size,
+      activeGames: [...engine.rooms.values()].filter(
+        (r) => !['LOBBY', 'GAME_OVER'].includes(r.phase),
+      ).length,
       metrics: {
         uptimeSeconds: Math.round(process.uptime()),
         rssBytes: process.memoryUsage().rss,
@@ -186,7 +213,29 @@ export function createGameServer(
       const cmd = parsed.data as Command;
       const cached = responses.get(cmd.requestId);
       if (cached) {
-        ack(cached);
+        if (cached.ok && cached.snapshot) {
+          try {
+            const auth = socket.data.auth;
+            if (!auth) throw new GameError('UNAUTHORIZED', 'Entre novamente na sala.');
+            const room = engine.room(auth.code);
+            ack({
+              ...cached,
+              snapshot: {
+                protocolVersion: PROTOCOL_VERSION,
+                room: engine.public(room, auth),
+                privateState: engine.privateState(room, auth),
+                serverTime: Date.now(),
+              },
+            });
+          } catch (error) {
+            ack({
+              ok: false,
+              code: error instanceof GameError ? error.code : 'SERVER_ERROR',
+              message:
+                error instanceof GameError ? error.message : 'Não foi possível recuperar a sala.',
+            });
+          }
+        } else ack(cached);
         return;
       }
       try {
@@ -208,7 +257,7 @@ export function createGameServer(
                 ok: true,
                 snapshot: {
                   protocolVersion: PROTOCOL_VERSION,
-                  room: engine.public(engine.room(cmd.code)),
+                  room: engine.public(engine.room(cmd.code), socket.data.auth),
                   privateState: engine.privateState(engine.room(cmd.code), socket.data.auth),
                   serverTime: Date.now(),
                 },
@@ -244,7 +293,7 @@ export function createGameServer(
               ok: true,
               snapshot: {
                 protocolVersion: PROTOCOL_VERSION,
-                room: engine.public(room),
+                room: engine.public(room, auth),
                 privateState: engine.privateState(room, auth),
                 serverTime: Date.now(),
               },

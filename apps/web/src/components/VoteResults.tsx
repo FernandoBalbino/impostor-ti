@@ -31,6 +31,10 @@ export function VoteResultsModal({
           </span>
         </div>
       </header>
+      <p className="ranking-abstentions">
+        {result.abstentions ?? 0} {(result.abstentions ?? 0) === 1 ? 'abstenção' : 'abstenções'} ·
+        sem votos em jogadores
+      </p>
       {rows.length ? (
         <ol className="vote-ranking" aria-label="Ranking dos votos" tabIndex={0}>
           {rows.map(({ player, count, rank, tied, leader, fraction, durationMs }) => (

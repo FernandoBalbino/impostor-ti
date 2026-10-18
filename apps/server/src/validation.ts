@@ -29,7 +29,7 @@ export const CommandSchema = z.discriminatedUnion('type', [
       type: z.literal('player:powers'),
       powers: z
         .array(z.enum(POWER_IDS))
-        .max(2)
+        .max(3)
         .refine((v) => new Set(v).size === v.length),
       ...base,
     })
@@ -68,7 +68,14 @@ export const CommandSchema = z.discriminatedUnion('type', [
     .strict(),
   z.object({ type: z.literal('teacher:remove'), playerId: z.string().max(40), ...base }).strict(),
   z.object({ type: z.literal('clue:submit'), text: z.string().max(500), ...base }).strict(),
-  z.object({ type: z.literal('vote:submit'), targetId: z.string().max(40), ...base }).strict(),
+  z
+    .object({
+      type: z.literal('vote:submit'),
+      targetId: z.string().min(1).max(40).nullable(),
+      ballotId: z.string().min(1).max(80),
+      ...base,
+    })
+    .strict(),
   ...[
     'game:start',
     'clues:close',

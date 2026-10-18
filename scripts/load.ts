@@ -53,13 +53,16 @@ try {
       await phase('LOBBY');
     }
     await Promise.all(
+      students.map((c) => c.send({ type: 'player:powers', powers: ['double_vote', 'refuge'] })),
+    );
+    await Promise.all(
       students.map((c, i) => c.send({ type: 'player:ready', ready: true, avatar: i })),
     );
     const impostorId = teacher.room!.players[0].id;
     await teacher.send({
       type: 'teacher:settings',
       settings: { ...teacher.room!.settings, clueSeconds: 30, selectionMode: 'manual' },
-      manualImpostorId: impostorId,
+      manualImpostorIds: [impostorId],
     });
     await teacher.send({ type: 'game:start' });
     await phase('CLUES');

@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import './powers.css';
 @font-face {
   font-family: Pixelify;
   src: url('../public/assets/fonts/pixel.ttf') format('truetype');

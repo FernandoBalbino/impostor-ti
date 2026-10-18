@@ -16,11 +16,12 @@ function setup(n = 4, options: ConstructorParameters<typeof GameEngine>[0] = {})
   );
   const command = (auth: Auth, cmd: Record<string, unknown>) =>
     engine.execute(auth, { ...cmd, requestId: randomUUID() } as Command);
+  for (const p of players) command(p, { type: 'player:powers', powers: ['double_vote', 'refuge'] });
   const settings = () =>
     command(teacher, {
       type: 'teacher:settings',
       settings: { ...room.settings, selectionMode: 'manual' },
-      manualImpostorId: players[0].playerId,
+      manualImpostorIds: [players[0].playerId],
     });
   const start = async () => {
     for (const p of players) command(p, { type: 'player:ready', ready: true, avatar: 0 });
@@ -118,7 +119,7 @@ test('define um impostor manual e entrega palavra somente a civis e professor', 
   const s = setup();
   try {
     await s.start();
-    assert.equal(s.room.impostorId, s.players[0].playerId);
+    assert.deepEqual(s.room.impostorIds, [s.players[0].playerId]);
     const secret = s.room.word!;
     const imp = s.engine.privateState(s.room, s.players[0]);
     assert.equal(imp.kind === 'player' && imp.role, 'impostor');
@@ -154,12 +155,15 @@ test('seleção manual exige um jogador elegível', () => {
   const s = setup();
   try {
     for (const p of s.players) s.command(p, { type: 'player:ready', ready: true, avatar: 0 });
-    s.command(s.teacher, {
-      type: 'teacher:settings',
-      settings: { ...s.room.settings, selectionMode: 'manual' },
-      manualImpostorId: 'invalid',
-    });
-    rejects(() => s.command(s.teacher, { type: 'game:start' }), 'SELECT_IMPOSTOR');
+    rejects(
+      () =>
+        s.command(s.teacher, {
+          type: 'teacher:settings',
+          settings: { ...s.room.settings, selectionMode: 'manual' },
+          manualImpostorIds: ['invalid'],
+        }),
+      'SELECT_IMPOSTOR',
+    );
   } finally {
     s.engine.close();
   }

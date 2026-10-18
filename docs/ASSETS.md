@@ -1,5 +1,9 @@
 # Recursos visuais
 
+## Poderes estratégicos
+
+Dez sprites originais foram gerados individualmente com a ferramenta integrada Image Gen em 18/10/2026, seguindo a pixel art do jogo. Fontes PNG em `docs/power-sprites/`; sprites de jogo em WebP sem perdas, com transparência e 128×128 pixels, em `apps/web/public/assets/powers/`. As dez versões otimizadas somam 135.704 bytes. Prompts e assuntos individuais estão em [IMAGE-PROMPTS.md](IMAGE-PROMPTS.md).
+
 ## Imagens reutilizadas
 
 Equipamentos e parte dos ícones foram copiados do repositório do usuário [FernandoBalbino/CentralJogos](https://github.com/FernandoBalbino/CentralJogos), principalmente `assets/items/` e os ícones do organizador de arquivos. A reutilização foi solicitada pelo proprietário do projeto. Os direitos dos recursos de terceiros permanecem com seus respectivos titulares; as marcas identificam os programas ensinados.

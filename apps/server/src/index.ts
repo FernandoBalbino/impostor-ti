@@ -2,11 +2,19 @@ import express from 'express';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import type { Ack, ClientEvents, ServerEvents, Command, PublicRoom } from '@impostor/shared';
+import { PROTOCOL_VERSION } from '@impostor/shared';
+import { monitorEventLoopDelay } from 'node:perf_hooks';
 import { GameEngine, GameError, type Auth } from './engine.js';
 import { CommandSchema } from './validation.js';
 
 export function createGameServer(
-  options: { origins?: string[]; revealMs?: number; resultMs?: number } = {},
+  options: {
+    origins?: string[];
+    revealMs?: number;
+    resultMs?: number;
+    effectMs?: number;
+    random?: (max: number) => number;
+  } = {},
 ) {
   const origins =
     options.origins ??
@@ -21,6 +29,8 @@ export function createGameServer(
     {
       cors: { origin: origins, methods: ['GET', 'POST'] },
       maxHttpBufferSize: 8192,
+      perMessageDeflate: false,
+      serveClient: false,
       allowRequest: (req, callback) =>
         callback(null, !req.headers.origin || origins.includes(req.headers.origin)),
       pingInterval: 20_000,
@@ -28,27 +38,54 @@ export function createGameServer(
     },
   );
   const previous = new Map<string, PublicRoom>();
-  const engine = new GameEngine({
-    revealMs: options.revealMs,
-    resultMs: options.resultMs,
-    onChange(room, privateChanged) {
-      const state = engine.public(room);
-      const old = previous.get(room.code);
-      const changes: Partial<PublicRoom> = {};
-      for (const key of Object.keys(state) as (keyof PublicRoom)[])
-        if (!old || JSON.stringify(state[key]) !== JSON.stringify(old[key]))
-          (changes as Record<string, unknown>)[key] = state[key];
-      previous.set(room.code, state);
+  const pending = new Map<string, ReturnType<typeof setTimeout>>();
+  const histogram = monitorEventLoopDelay({ resolution: 20 });
+  histogram.enable();
+  let commandCount = 0;
+  const publish = (room: ReturnType<GameEngine['room']>) => {
+    const timer = pending.get(room.code);
+    if (timer) clearTimeout(timer);
+    pending.delete(room.code);
+    const state = engine.public(room);
+    const old = previous.get(room.code);
+    const changes: Partial<PublicRoom> = {};
+    for (const key of Object.keys(state) as (keyof PublicRoom)[]) {
+      if (key !== 'revision' && (!old || JSON.stringify(state[key]) !== JSON.stringify(old[key])))
+        (changes as Record<string, unknown>)[key] = state[key];
+    }
+    previous.set(room.code, state);
+    if (Object.keys(changes).length)
       io.to(room.code).emit('update', {
         code: room.code,
         revision: room.revision,
         changes,
         serverTime: Date.now(),
       });
+  };
+  const engine = new GameEngine({
+    revealMs: options.revealMs,
+    resultMs: options.resultMs,
+    effectMs: options.effectMs,
+    random: options.random,
+    onChange(room, privateChanged) {
+      if (previous.get(room.code)?.phase !== room.phase) publish(room);
+      else if (!pending.has(room.code)) {
+        const timer = setTimeout(() => publish(room), 20);
+        timer.unref();
+        pending.set(room.code, timer);
+      }
       if (privateChanged)
-        for (const socket of io.sockets.sockets.values())
-          if (socket.data.auth?.code === room.code)
-            socket.emit('privateState', engine.privateState(room, socket.data.auth));
+        for (const id of io.sockets.adapter.rooms.get(room.code) ?? []) {
+          const socket = io.sockets.sockets.get(id);
+          const auth = socket?.data.auth;
+          if (
+            socket &&
+            auth &&
+            (privateChanged === true ||
+              privateChanged.includes(auth.kind === 'teacher' ? 'teacher' : (auth.playerId ?? '')))
+          )
+            socket.emit('privateState', engine.privateState(room, auth));
+        }
     },
     onRemove(code, _id, sockets) {
       for (const id of sockets) {
@@ -61,6 +98,9 @@ export function createGameServer(
       }
     },
     onExpire(code) {
+      const timer = pending.get(code);
+      if (timer) clearTimeout(timer);
+      pending.delete(code);
       previous.delete(code);
       io.to(code).emit('removed', 'Esta sala foi encerrada por inatividade.');
     },
@@ -73,7 +113,23 @@ export function createGameServer(
     next();
   });
   app.get('/health', (_req, res) =>
-    res.json({ status: 'ok', service: 'impostor-ti', version: '1.0.0', rooms: engine.rooms.size }),
+    res.json({
+      status: 'ok',
+      service: 'impostor-ti',
+      version: '2.0.0',
+      protocolVersion: PROTOCOL_VERSION,
+      release: process.env.RENDER_GIT_COMMIT?.slice(0, 7) ?? 'local',
+      rooms: engine.rooms.size,
+      metrics: {
+        uptimeSeconds: Math.round(process.uptime()),
+        rssBytes: process.memoryUsage().rss,
+        heapBytes: process.memoryUsage().heapUsed,
+        cpu: process.cpuUsage(),
+        eventLoopP95Ms: Number((histogram.percentile(95) / 1e6).toFixed(2)),
+        commands: commandCount,
+        connections: io.engine.clientsCount,
+      },
+    }),
   );
   const ipLimits = new Map<string, { count: number; reset: number }>();
   const limited = (key: string, max: number) => {
@@ -96,6 +152,15 @@ export function createGameServer(
     let reset = Date.now() + 60_000;
     socket.on('command', (raw, ack) => {
       if (typeof ack !== 'function') return;
+      commandCount++;
+      if (!raw || raw.protocolVersion !== PROTOCOL_VERSION) {
+        ack({
+          ok: false,
+          code: 'UPDATE_REQUIRED',
+          message: 'O jogo recebeu uma atualização. Atualize a página para continuar.',
+        });
+        return;
+      }
       if (Date.now() > reset) {
         count = 0;
         reset = Date.now() + 60_000;
@@ -142,6 +207,7 @@ export function createGameServer(
               response = {
                 ok: true,
                 snapshot: {
+                  protocolVersion: PROTOCOL_VERSION,
                   room: engine.public(engine.room(cmd.code)),
                   privateState: engine.privateState(engine.room(cmd.code), socket.data.auth),
                   serverTime: Date.now(),
@@ -177,6 +243,7 @@ export function createGameServer(
               ...response,
               ok: true,
               snapshot: {
+                protocolVersion: PROTOCOL_VERSION,
                 room: engine.public(room),
                 privateState: engine.privateState(room, auth),
                 serverTime: Date.now(),
@@ -186,7 +253,7 @@ export function createGameServer(
         } else {
           if (!socket.data.auth)
             throw new GameError('UNAUTHORIZED', 'Entre em uma sala para continuar.');
-          engine.execute(socket.data.auth, cmd);
+          response = { ok: true, ...engine.execute(socket.data.auth, cmd) };
         }
         responses.set(cmd.requestId, response);
         if (responses.size > 100) responses.delete(responses.keys().next().value!);
@@ -217,6 +284,9 @@ export function createGameServer(
     io,
     engine,
     close: async () => {
+      histogram.disable();
+      for (const timer of pending.values()) clearTimeout(timer);
+      pending.clear();
       engine.close();
       clearInterval(limitCleanup);
       await new Promise<void>((resolve) => io.close(() => resolve()));

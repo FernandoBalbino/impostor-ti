@@ -2,6 +2,7 @@ import { useState, useEffect, type FormEvent } from 'react';
 import { useGame } from '../connection';
 import { CATEGORIES, type Settings } from '@impostor/shared';
 import { Avatar, AvatarPicker } from '../components/ui';
+import { PowerPicker } from '../components/Powers';
 import {
   ArrowRightIcon,
   CheckIcon,
@@ -16,21 +17,26 @@ function TeacherSettings({ onDirty }: { onDirty: (dirty: boolean) => void }) {
   const { room, privateState, send, busy } = useGame();
   const [settings, setSettings] = useState<Settings>(room!.settings);
   const [manual, setManual] = useState(
-    privateState?.kind === 'teacher' ? privateState.manualImpostorId : null,
+    privateState?.kind === 'teacher' ? privateState.manualImpostorIds : [],
   );
   const dirty =
     JSON.stringify(settings) !== JSON.stringify(room!.settings) ||
-    manual !== (privateState?.kind === 'teacher' ? privateState.manualImpostorId : null);
+    JSON.stringify(manual) !==
+      JSON.stringify(privateState?.kind === 'teacher' ? privateState.manualImpostorIds : []);
   useEffect(() => {
     onDirty(dirty);
   }, [dirty, onDirty]);
   useEffect(() => {
     setSettings(room!.settings);
-    if (privateState?.kind === 'teacher') setManual(privateState.manualImpostorId);
+    if (privateState?.kind === 'teacher') setManual(privateState.manualImpostorIds);
   }, [room!.settings, privateState]);
   const save = (e: FormEvent) => {
     e.preventDefault();
-    void send({ type: 'teacher:settings', settings, manualImpostorId: manual });
+    void send({
+      type: 'teacher:settings',
+      settings,
+      manualImpostorIds: settings.selectionMode === 'manual' ? manual : [],
+    });
   };
   return (
     <form className="settings" onSubmit={save}>
@@ -71,7 +77,24 @@ function TeacherSettings({ onDirty }: { onDirty: (dirty: boolean) => void }) {
         </select>
       </label>
       <label>
-        Quem será o impostor?
+        Quantidade de impostores
+        <select
+          value={settings.impostorCount}
+          onChange={(e) => {
+            const impostorCount = Number(e.target.value) as Settings['impostorCount'];
+            setSettings({ ...settings, impostorCount });
+            setManual((ids) => ids.slice(0, impostorCount));
+          }}
+        >
+          {[1, 2, 3].map((n) => (
+            <option key={n} value={n}>
+              {n} {n === 1 ? 'impostor' : 'impostores'} · mínimo {n * 2 + 1} alunos
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>
+        Como escolher os impostores?
         <select
           value={settings.selectionMode}
           onChange={(e) =>
@@ -83,19 +106,30 @@ function TeacherSettings({ onDirty }: { onDirty: (dirty: boolean) => void }) {
         </select>
       </label>
       {settings.selectionMode === 'manual' && (
-        <label>
-          Impostor escolhido
-          <select value={manual ?? ''} onChange={(e) => setManual(e.target.value || null)}>
-            <option value="">Selecione um aluno</option>
-            {room!.players
-              .filter((p) => !p.spectator)
-              .map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-          </select>
-        </label>
+        <fieldset className="manual-impostors">
+          <legend>
+            Escolha {settings.impostorCount}{' '}
+            {settings.impostorCount === 1 ? 'impostor' : 'impostores'} em segredo ({manual.length}/
+            {settings.impostorCount})
+          </legend>
+          {room!.players
+            .filter((p) => !p.spectator)
+            .map((p) => (
+              <label className="check-label" key={p.id}>
+                <input
+                  type="checkbox"
+                  checked={manual.includes(p.id)}
+                  disabled={!manual.includes(p.id) && manual.length >= settings.impostorCount}
+                  onChange={(e) =>
+                    setManual((ids) =>
+                      e.target.checked ? [...ids, p.id] : ids.filter((id) => id !== p.id),
+                    )
+                  }
+                />
+                {p.name}
+              </label>
+            ))}
+        </fieldset>
       )}
       <label className="check-label">
         <input
@@ -125,7 +159,11 @@ export function Lobby() {
   const validManualChoice =
     room!.settings.selectionMode !== 'manual' ||
     (privateState?.kind === 'teacher' &&
-      participants.some((p) => p.id === privateState.manualImpostorId));
+      privateState.manualImpostorIds.length === room!.settings.impostorCount &&
+      privateState.manualImpostorIds.every((id) => participants.some((p) => p.id === id)));
+  const selectedPowers =
+    privateState?.kind === 'player' ? privateState.powers.map((p) => p.id) : [];
+  const minimum = room!.settings.impostorCount * 2 + 1;
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(room!.code);
@@ -206,7 +244,7 @@ export function Lobby() {
                 busy ||
                 settingsDirty ||
                 !validManualChoice ||
-                participants.length < 3 ||
+                participants.length < minimum ||
                 participants.some((p) => !p.ready || !p.online)
               }
               onClick={() => void send({ type: 'game:start' })}
@@ -217,8 +255,8 @@ export function Lobby() {
               {settingsDirty
                 ? 'Salve as configurações antes de iniciar.'
                 : !validManualChoice
-                  ? 'Escolha e salve um impostor antes de iniciar.'
-                  : 'Pelo menos 3 alunos, todos conectados e prontos.'}
+                  ? 'Escolha e salve todos os impostores antes de iniciar.'
+                  : `Pelo menos ${minimum} alunos, todos conectados e prontos.`}
             </p>
             <a
               className="ghost full"
@@ -245,9 +283,14 @@ export function Lobby() {
                     void send({ type: 'player:ready', ready: false, avatar: value });
                   }}
                 />
+                <PowerPicker
+                  value={selectedPowers}
+                  disabled={busy}
+                  onChange={(powers) => void send({ type: 'player:powers', powers })}
+                />
                 <button
                   className={`full big ${me?.ready ? 'secondary' : 'primary'}`}
-                  disabled={busy}
+                  disabled={busy || selectedPowers.length !== 2}
                   onClick={() => void send({ type: 'player:ready', ready: !me?.ready, avatar })}
                 >
                   {me?.ready ? (
@@ -263,7 +306,7 @@ export function Lobby() {
                 <p className="subtle centered">
                   {me?.ready
                     ? 'Aguarde o professor iniciar a partida.'
-                    : 'Escolha seu personagem e avise que está pronto.'}
+                    : 'Escolha seu personagem, dois poderes e avise que está pronto.'}
                 </p>
               </>
             )}

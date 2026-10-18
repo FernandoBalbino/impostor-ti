@@ -1,6 +1,17 @@
 # Validação — Impostor TI
 
-Verificações concluídas em **17/10/2026**. Frontend verificado: `ae3f467`; backend: `44a1092`, com `/health` configurado no Render. Alterações posteriores deste registro não modificam o jogo.
+## Poderes e até três impostores — 18/10/2026
+
+- TypeScript, **63/63 testes** e builds do frontend e servidor aprovados localmente.
+- Novos testes cobrem os dez poderes, recargas, tentativa fracassada, barreiras, escudo de uso único, reescrita com silêncio, dicas falsas, votos dobrados e impedidos, 1–3 impostores, privacidade, reconexão e reenvio idempotente.
+- Integração real com 24 alunos, professor e telão verifica 24 ativações simultâneas, absorção de ataques, notificações anônimas e restauração sem cobrança duplicada.
+- Navegador local: os dez poderes ativados pela interface, escolha obrigatória de dois poderes, três impostores selecionados pelo professor, aliados privados, rascunho preservado, voto no celular, escudo impedindo eliminação, imagem oculta na próxima rodada e vitória após eliminar os três impostores.
+- Layouts 1366×768 e 390×844, sem transbordamento horizontal, imagens quebradas ou erros de console. Campo de escrita visível nos dois tamanhos. Relatório local: `qa-evidence/powers/local-browser-report.json`.
+- A publicação e a nova sessão pública de 30 minutos serão registradas abaixo após sua conclusão. A carga histórica de 17/10 não valida os poderes desta versão.
+
+## Validação histórica — versão sem poderes
+
+Verificações concluídas em **17/10/2026**. Frontend verificado: `ae3f467`; backend: `44a1092`, com `/health` configurado no Render. Este registro histórico se refere à versão anterior aos poderes.
 
 ## Código e integração
 

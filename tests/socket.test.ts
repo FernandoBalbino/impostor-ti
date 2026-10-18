@@ -32,6 +32,9 @@ test('24 clientes, professor e telão: fases, isolamento, votos e reconexão rea
     const malformed = await players[0].raw({ type: 'player:ready', ready: true, avatar: 99 });
     assert.equal(malformed.ok, false);
     await Promise.all(
+      players.map((c) => c.send({ type: 'player:powers', powers: ['double_vote', 'refuge'] })),
+    );
+    await Promise.all(
       players.map((c, i) => c.send({ type: 'player:ready', ready: true, avatar: i })),
     );
     const impostorId =
@@ -39,7 +42,7 @@ test('24 clientes, professor e telão: fases, isolamento, votos e reconexão rea
     await teacher.send({
       type: 'teacher:settings',
       settings: { ...teacher.room!.settings, selectionMode: 'manual' },
-      manualImpostorId: impostorId,
+      manualImpostorIds: [impostorId],
     });
     await teacher.send({ type: 'game:start' });
     await until(() => all.every((c) => c.room?.phase === 'CLUES'));

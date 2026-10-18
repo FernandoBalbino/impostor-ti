@@ -7,6 +7,7 @@ import {
   type WordCard as Word,
 } from '@impostor/shared';
 import { Avatar, Modal, asset } from '../components/ui';
+import { PowerTray, PowerNotifications } from '../components/Powers';
 import {
   ArrowRightIcon,
   CheckIcon,
@@ -30,6 +31,7 @@ const PlayerTile = memo(function PlayerTile({
   onSelect,
   resultCount,
   isMe,
+  ally,
 }: {
   player: PublicPlayer;
   index: number;
@@ -39,6 +41,7 @@ const PlayerTile = memo(function PlayerTile({
   onSelect: (id: string) => void;
   resultCount: number | null;
   isMe: boolean;
+  ally: boolean;
 }) {
   const pending = phase === 'CLUES' && player.alive && player.clue === null;
   const text = player.spectator
@@ -55,7 +58,7 @@ const PlayerTile = memo(function PlayerTile({
               : 'Sem dica'));
   return (
     <button
-      className={`player-tile ${!player.alive ? 'eliminated' : ''} ${selectable ? 'selectable' : ''} ${selected ? 'suspect' : ''} ${player.clue ? 'answered' : ''}`}
+      className={`player-tile ${ally ? 'impostor-ally' : ''} ${!player.alive ? 'eliminated' : ''} ${selectable ? 'selectable' : ''} ${selected ? 'suspect' : ''} ${player.clue ? 'answered' : ''}`}
       disabled={!selectable}
       onClick={() => onSelect(player.id)}
       aria-label={
@@ -69,6 +72,7 @@ const PlayerTile = memo(function PlayerTile({
         <span className="player-name" title={player.name}>
           {player.name}
           {isMe && <small> você</small>}
+          {ally && !isMe && <small className="ally-label">Aliado impostor</small>}
           {phase === 'VOTING' && player.voted && (
             <span className="voted-marker" title="Voto confirmado">
               <CheckIcon />
@@ -133,7 +137,7 @@ function SecretCard() {
   ].includes(room!.phase);
   const result = room!.result;
   if (result) {
-    const p = room!.players.find((p) => p.id === result.impostorId);
+    const impostors = room!.players.filter((p) => result.impostorIds.includes(p.id));
     return (
       <section
         className={`secret-card result-card ${result.winner === 'impostor' ? 'impostor-wins' : ''}`}
@@ -146,12 +150,21 @@ function SecretCard() {
           {result.winner === 'civis'
             ? 'VITÓRIA DOS CIVIS!'
             : result.winner === 'impostor'
-              ? 'VITÓRIA DO IMPOSTOR!'
+              ? impostors.length > 1
+                ? 'VITÓRIA DOS IMPOSTORES!'
+                : 'VITÓRIA DO IMPOSTOR!'
               : 'PARTIDA ENCERRADA'}
         </h1>
-        <Avatar index={p?.avatar ?? 0} />
+        <div className="result-impostors">
+          {impostors.map((p) => (
+            <div key={p.id}>
+              <Avatar index={p.avatar} />
+              <strong>{p.name}</strong>
+            </div>
+          ))}
+        </div>
         <p>
-          O impostor era <strong>{p?.name}</strong>
+          {impostors.length > 1 ? 'Os impostores foram revelados.' : 'O impostor foi revelado.'}
         </p>
         <div className="result-word">
           <ItemImage word={result.word} />
@@ -162,8 +175,8 @@ function SecretCard() {
         </div>
         <span className="subtle">
           {room!.round} {room!.round === 1 ? 'rodada' : 'rodadas'} ·{' '}
-          {room!.eliminations.filter((e) => e.playerId !== result.impostorId).length}{' '}
-          {room!.eliminations.filter((e) => e.playerId !== result.impostorId).length === 1
+          {room!.eliminations.filter((e) => !result.impostorIds.includes(e.playerId)).length}{' '}
+          {room!.eliminations.filter((e) => !result.impostorIds.includes(e.playerId)).length === 1
             ? 'civil eliminado'
             : 'civis eliminados'}
         </span>
@@ -184,11 +197,13 @@ function SecretCard() {
             : room!.phase === 'TIEBREAK'
               ? 'A turma ficou dividida!'
               : room!.phase === 'VOTE_RESULTS'
-                ? room!.voteResult?.noVotes
-                  ? 'Nenhum voto recebido'
-                  : room!.voteResult?.tied.length
-                    ? 'Temos um empate!'
-                    : 'A turma decidiu…'
+                ? room!.voteResult?.protectedId
+                  ? 'O escudo resistiu!'
+                  : room!.voteResult?.noVotes
+                    ? 'Nenhum voto recebido'
+                    : room!.voteResult?.tied.length
+                      ? 'Temos um empate!'
+                      : 'A turma decidiu…'
                 : room!.phase === 'WAITING_FOR_NEXT_ROUND'
                   ? 'O mistério continua.'
                   : 'Quem é o impostor?'}
@@ -199,10 +214,14 @@ function SecretCard() {
             : room!.phase === 'TIEBREAK'
               ? 'O professor pode abrir uma votação entre os empatados.'
               : room!.phase === 'WAITING_FOR_NEXT_ROUND'
-                ? 'O professor iniciará uma nova rodada de dicas.'
+                ? room!.voteResult?.protectedId
+                  ? 'Égide do Destino impediu a eliminação. O escudo foi destruído.'
+                  : 'O professor iniciará uma nova rodada de dicas.'
                 : room!.phase === 'ELIMINATION'
                   ? 'Os sobreviventes continuam. O papel permanece em segredo.'
-                  : 'Confira a contagem ao lado de cada personagem.'}
+                  : room!.voteResult?.protectedId
+                    ? 'Égide do Destino foi destruída. Ninguém foi eliminado nesta votação.'
+                    : 'Confira a contagem ao lado de cada personagem.'}
         </p>
         <span className="category-badge">{room!.category}</span>
         {eliminated && (
@@ -225,7 +244,16 @@ function SecretCard() {
       {word && !display ? (
         <>
           <div className="item-stage">
-            <ItemImage word={word} />
+            {privateState?.kind === 'player' &&
+            privateState.effects.hiddenImageRounds.includes(room!.round) ? (
+              <div className="hidden-item">
+                <EyeSlashIcon weight="duotone" />
+                <span>Véu de Platão</span>
+                <small>Imagem oculta nesta rodada</small>
+              </div>
+            ) : (
+              <ItemImage word={word} />
+            )}
           </div>
           <h1 className="word-name">{word.nome}</h1>
         </>
@@ -255,16 +283,17 @@ function SecretCard() {
         <>
           <button className="teacher-peek" onClick={() => setPeek(!peek)}>
             <EyeSlashIcon />
-            {peek ? 'Ocultar impostor' : 'Consultar impostor em segredo'}
+            {peek ? 'Ocultar impostores' : 'Consultar impostores em segredo'}
           </button>
           {peek && (
             <strong className="impostor-name">
-              {
-                room!.players.find(
+              {room!.players
+                .filter(
                   (p) =>
-                    p.id === (privateState?.kind === 'teacher' ? privateState.impostorId : null),
-                )?.name
-              }
+                    privateState?.kind === 'teacher' && privateState.impostorIds.includes(p.id),
+                )
+                .map((p) => p.name)
+                .join(', ')}
             </strong>
           )}
         </>
@@ -390,12 +419,21 @@ export function GameBoard({ tools }: { tools: ReactNode }) {
   const remaining = state.deadline
     ? Math.max(0, Math.ceil((state.deadline - now - offset) / 1000))
     : 0;
-  const clueCount = alive.filter((p) => p.clue !== null).length;
+  const clueCount = state.clueCount;
   const voteCount = alive.filter((p) => p.voted).length;
   const voting = state.phase === 'VOTING';
   const canVote = !!me && me.alive && !me.spectator && !me.voted && voting && connected;
+  const playerState = privateState?.kind === 'player' ? privateState : null;
+  const voteAllowed = canVote && playerState?.effects.bannedVoteRound !== state.round;
   const canClue =
-    !!me && me.alive && !me.spectator && me.clue === null && state.phase === 'CLUES' && connected;
+    !!me &&
+    me.alive &&
+    !me.spectator &&
+    !playerState?.clueSubmitted &&
+    state.phase === 'CLUES' &&
+    connected &&
+    (playerState?.effects.silencedUntil ?? 0) <= now + offset &&
+    (playerState?.clueDeadline ?? 0) > now + offset;
   const showCounts =
     ['VOTE_RESULTS', 'TIEBREAK', 'ELIMINATION', 'WAITING_FOR_NEXT_ROUND', 'GAME_OVER'].includes(
       state.phase,
@@ -408,7 +446,7 @@ export function GameBoard({ tools }: { tools: ReactNode }) {
       phase={state.phase}
       selected={selected === p.id}
       selectable={
-        canVote &&
+        voteAllowed &&
         p.alive &&
         p.id !== me?.id &&
         (!state.candidates.length || state.candidates.includes(p.id))
@@ -416,6 +454,9 @@ export function GameBoard({ tools }: { tools: ReactNode }) {
       onSelect={setSelected}
       resultCount={showCounts ? (state.voteResult!.counts[p.id] ?? 0) : null}
       isMe={p.id === me?.id}
+      ally={
+        !!playerState && playerState.role === 'impostor' && playerState.impostorIds.includes(p.id)
+      }
     />
   );
   const sendClue = (e: FormEvent) => {
@@ -487,19 +528,20 @@ export function GameBoard({ tools }: { tools: ReactNode }) {
             <div className="response-progress">
               <div
                 style={{
-                  width: `${((voting ? voteCount : clueCount) / Math.max(1, alive.length)) * 100}%`,
+                  width: `${((voting ? voteCount : clueCount) / Math.max(1, voting ? state.eligibleVoters : alive.length)) * 100}%`,
                 }}
               />
             </div>
             <p>
               <strong>
-                {voting ? voteCount : clueCount}/{alive.length}
+                {voting ? voteCount : clueCount}/{voting ? state.eligibleVoters : alive.length}
               </strong>{' '}
-              {voting ? 'votos confirmados' : 'dicas enviadas'}
+              {voting ? 'votantes confirmados' : 'dicas enviadas'}
             </p>
           </div>
           <SecretCard />
           <div className="action-panel panel">
+            <PowerTray now={now + offset} />
             {teacher ? (
               <TeacherControls />
             ) : display ? (
@@ -518,13 +560,15 @@ export function GameBoard({ tools }: { tools: ReactNode }) {
                     <>
                       <CheckIcon /> Voto confirmado. Aguarde o professor.
                     </>
-                  ) : canVote ? (
+                  ) : playerState?.effects.bannedVoteRound === state.round ? (
+                    'Exílio do Veredito: você não poderá votar nesta rodada.'
+                  ) : voteAllowed ? (
                     'Escolha um personagem e confirme seu voto.'
                   ) : (
                     'Você está assistindo à votação.'
                   )}
                 </p>
-                {canVote && (
+                {voteAllowed && (
                   <button
                     className="primary full"
                     disabled={!selected || busy}
@@ -546,11 +590,15 @@ export function GameBoard({ tools }: { tools: ReactNode }) {
               <>
                 <p>
                   <SparkleIcon weight="fill" />
-                  {me?.clue !== null && me?.clue !== undefined
+                  {playerState?.clueSubmitted
                     ? 'Dica enviada! Observe as pistas dos colegas.'
-                    : canClue
-                      ? 'Escreva uma dica curta sem revelar demais.'
-                      : 'Você está assistindo à investigação.'}
+                    : (playerState?.effects.silencedUntil ?? 0) > now + offset
+                      ? 'Silêncio do Inocente: aguarde o contador terminar.'
+                      : canClue
+                        ? 'Escreva uma dica curta sem revelar demais.'
+                        : me?.alive && !me.spectator
+                          ? 'Seu prazo de envio terminou. Observe as pistas da turma.'
+                          : 'Você está assistindo à investigação.'}
                 </p>
                 {me?.alive && !me.spectator && (
                   <form className="clue-form" onSubmit={sendClue}>
@@ -561,7 +609,11 @@ export function GameBoard({ tools }: { tools: ReactNode }) {
                         value={clue}
                         onChange={(e) => setClue(e.target.value)}
                         disabled={!canClue || busy}
-                        placeholder={me.clue ?? 'Digite aqui sua dica…'}
+                        placeholder={
+                          playerState?.clueSubmitted
+                            ? (me.clue ?? 'Dica enviada')
+                            : 'Digite aqui sua dica…'
+                        }
                       />
                       <small>{Array.from(clue).length}/80</small>
                     </div>
@@ -591,6 +643,7 @@ export function GameBoard({ tools }: { tools: ReactNode }) {
           {people.slice(midpoint).map((p, i) => tile(p, i + midpoint))}
         </section>
       </div>
+      <PowerNotifications />
       {history && (
         <Modal title="Histórico da investigação" onClose={() => setHistory(false)}>
           <div className="history-list">

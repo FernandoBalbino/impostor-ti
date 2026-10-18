@@ -23,3 +23,26 @@ One original 16-bit pixel art inventory icon of a basic yellow computer file fol
 ## Wi-Fi (`items/wifi.png`)
 
 One original 16-bit pixel art inventory icon representing Wi-Fi for a basic computer literacy classroom game. Three thick curved cyan-blue wireless signal arcs above one round blue dot, all made of crisp chunky visible pixels with stair-step edges, dark navy pixel outline and bright cyan highlights. Single simple recognizable Wi-Fi symbol centered on genuinely transparent background. Square image with ample clear padding. No text, no letters, no device, no frame, no surrounding objects. Polished charming retro pixel game art.
+
+## Dez poderes — 18/10/2026
+
+Gerados individualmente com a ferramenta integrada **Image Gen**, em modo de geração, com transparência. Originais em `docs/power-sprites/`; recursos finais em `apps/web/public/assets/powers/`, WebP lossless de 128×128, redimensionados com amostragem nearest para preservar os pixels. Cada chamada usou o texto base abaixo, seguido do assunto correspondente.
+
+### Texto base
+
+Generate exactly ONE original videogame ability icon sprite, not a sheet or mockup. Clean crisp 16-bit pixel art matching a cozy classroom social deduction browser game with navy outlines, golden UI frames, parchment cards and Pixelify typography. True visible square pixels, restrained 16-color palette, dark navy 2-pixel contour, bold recognizable silhouette readable at 40x40. A single compact object centered on a square transparent canvas, occupies 80% of the canvas, equal transparent margin on every side. Flat front-facing collectible RPG icon with a few carefully placed pixel sparkles. No background, no frame, no gradients, no blur, no letters or typography except when the specific object below explicitly requests a rune A. Transparent alpha background is essential. Subject:
+
+### Assuntos
+
+| Arquivo | Assunto enviado ao Image Gen |
+|---|---|
+| `silence` | A small theatrical ivory mask with its mouth sealed by a crimson X ribbon. Crimson and warm ivory highlights. |
+| `letter` | One bold rune shaped like the capital letter A, cracked in half, with violet crystal shards. Purple and lavender highlights. Only the single letter A, no other text. |
+| `aegis` | A stout golden shield with a bright sapphire blue crystal at its center. Golden and blue highlights. |
+| `double_vote` | A symmetrical golden balance scale bearing two small glowing golden orbs, conveying two votes. Gold and amber highlights. |
+| `ban_vote` | A red wax voting seal, dramatically split in two, with a dark ballot silhouette. Crimson and orange highlights. |
+| `oracle` | A luminous watchful eye enclosed inside a faceted purple crystal. Violet and magenta highlights. |
+| `echo` | Two overlapping cream speech bubbles, one cyan and one violet, with three pixel dots in each, conveying a false echo. Cyan and purple highlights. |
+| `refuge` | A circular turquoise magical barrier enclosing a tiny glowing diamond. Teal, mint and cyan highlights. |
+| `erase` | A small rolled ivory parchment with a broad magical white eraser stroke across its dark writing, and a few white pixel sparks. Ivory, silver and blue highlights. |
+| `veil` | A watchful golden eye partly covered by a folded midnight blue veil. Navy blue, indigo and gold highlights. |

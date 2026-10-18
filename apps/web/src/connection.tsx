@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { useLocation } from 'react-router-dom';
 import { io, type Socket } from 'socket.io-client';
+import { PROTOCOL_VERSION } from '@impostor/shared';
 import type {
   Ack,
   ClientEvents,
@@ -19,7 +20,11 @@ import type {
   Session,
   Snapshot,
 } from '@impostor/shared';
-type Input = Command extends infer T ? (T extends Command ? Omit<T, 'requestId'> : never) : never;
+type Input = Command extends infer T
+  ? T extends Command
+    ? Omit<T, 'requestId' | 'protocolVersion'>
+    : never
+  : never;
 const socketUrl =
   import.meta.env.VITE_SOCKET_URL ||
   (import.meta.env.DEV
@@ -54,6 +59,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const snapshot = useCallback((data: Snapshot) => {
+    if (data.protocolVersion !== PROTOCOL_VERSION) {
+      setError('O jogo está sendo atualizado. Atualize a página em instantes.');
+      return;
+    }
     setRoom(data.room);
     setPrivate(data.privateState);
     setOffset(data.serverTime - Date.now());
@@ -108,7 +117,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
           .timeout(12000)
           .emit(
             'command',
-            { ...command, requestId: crypto.randomUUID() } as Command,
+            {
+              ...command,
+              protocolVersion: PROTOCOL_VERSION,
+              requestId: crypto.randomUUID(),
+            } as Command,
             (err: Error | null, result: Ack) => {
               setRecovering(false);
               if (err) {
@@ -171,9 +184,19 @@ export function GameProvider({ children }: { children: ReactNode }) {
             client.once('connect', done);
             client.connect();
           });
-        const request = { ...command, requestId: crypto.randomUUID() } as Command;
-        const result = await client.timeout(12000).emitWithAck('command', request);
-        return process(result);
+        const request = {
+          ...command,
+          protocolVersion: PROTOCOL_VERSION,
+          requestId: crypto.randomUUID(),
+        } as Command;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            return process(await client.timeout(6000).emitWithAck('command', request));
+          } catch (err) {
+            if (attempt === 2 || !client.connected) throw err;
+          }
+        }
+        return false;
       } catch (err) {
         setError(
           err instanceof Error && err.message.includes('servidor')
@@ -190,7 +213,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const leave = useCallback(() => {
     const client = socket.current;
     if (client?.connected && room?.phase === 'LOBBY' && privateState?.kind === 'player')
-      client.emit('command', { type: 'session:leave', requestId: crypto.randomUUID() }, () => {});
+      client.emit(
+        'command',
+        {
+          type: 'session:leave',
+          protocolVersion: PROTOCOL_VERSION,
+          requestId: crypto.randomUUID(),
+        },
+        () => {},
+      );
     sessionStorage.removeItem(sessionKey);
     setRoom(null);
     setPrivate(null);

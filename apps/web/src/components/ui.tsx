@@ -100,7 +100,7 @@ export function HowTo({ onClose }: { onClose: () => void }) {
         </li>
         <li>
           <strong>Confira seu papel em segredo.</strong> Civis recebem uma palavra e uma imagem. O
-          impostor recebe apenas a categoria.
+          impostor recebe apenas a categoria e identifica seus aliados, quando houver.
         </li>
         <li>
           <strong>Dê uma pista.</strong> Escreva uma dica curta sem dizer a palavra. O impostor
@@ -112,9 +112,14 @@ export function HowTo({ onClose }: { onClose: () => void }) {
         </li>
         <li>
           <strong>Investiguem até o fim.</strong> Se um civil sair, a partida continua. Civis vencem
-          ao eliminar o impostor; o impostor vence quando restar apenas um civil.
+          ao eliminar todos os impostores. Impostores vencem quando igualam ou superam os civis
+          vivos.
         </li>
       </ol>
+      <p>
+        Escolha dois poderes no lobby. Use apenas um por rodada. Cada poder volta quatro rodadas
+        após o uso; Égide do Destino só pode ser ativada uma vez por partida.
+      </p>
       <p className="subtle">
         Cada aluno joga individualmente. Quem é eliminado continua assistindo.
       </p>

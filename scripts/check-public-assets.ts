@@ -1,8 +1,9 @@
 import { createHash } from 'node:crypto';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { CATALOG } from '../apps/server/src/catalog.js';
+import { POWER_IDS } from '@impostor/shared';
 const base = process.env.SITE_URL ?? 'https://fernandobalbino.github.io/impostor-ti/';
-const paths = [...new Set(CATALOG.map((w) => w.imagem))];
+const paths = [...new Set([...CATALOG.map((w) => w.imagem), ...POWER_IDS.map(id => `assets/powers/${id}.webp`)])];
 const results: { path: string; ok: boolean; status: number }[] = [];
 for (let offset = 0; offset < paths.length; offset += 6) {
   await Promise.all(
@@ -22,6 +23,7 @@ for (let offset = 0; offset < paths.length; offset += 6) {
 const report = {
   base,
   words: CATALOG.length,
+  powers: POWER_IDS.length,
   uniqueAssets: paths.length,
   failed: results.filter((r) => !r.ok),
   checkedAt: new Date().toISOString(),

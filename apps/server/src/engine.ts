@@ -1,6 +1,13 @@
 import { randomBytes, randomInt } from 'node:crypto';
 import {
   CATEGORIES,
+  POWER_IDS,
+  POWERS,
+  ACTIVE_POWER_PHASES,
+  type PowerId,
+  type PowerSlot,
+  type PlayerEffects,
+  type PowerNotice,
   type Category,
   type Settings,
   type PublicRoom,
@@ -34,7 +41,27 @@ export const normalize = (text: string) =>
     .trim()
     .replace(/\s+/g, ' ');
 const token = () => randomBytes(32).toString('base64url');
-type Player = PublicPlayer & { token: string; sockets: Set<string> };
+type Player = PublicPlayer & {
+  token: string;
+  sockets: Set<string>;
+  powers: PowerSlot[];
+  effects: PlayerEffects;
+  usedPowerRound: number;
+  fakeClue: string | null;
+  rewriteUntil: number;
+  notifications: PowerNotice[];
+  noticeSequence: number;
+};
+const freshEffects = (): PlayerEffects => ({
+  silencedUntil: 0,
+  forbiddenLetter: null,
+  aegis: false,
+  refuge: false,
+  doubleVoteRound: 0,
+  bannedVoteRound: 0,
+  hiddenImageRounds: [],
+});
+type CommandResult = { activation?: PowerNotice };
 export interface Auth {
   code: string;
   kind: 'teacher' | 'player' | 'display';
@@ -50,10 +77,11 @@ export interface Room {
   players: Player[];
   teacherToken: string;
   teacherSockets: Set<string>;
-  manualImpostorId: string | null;
-  impostorId: string | null;
+  manualImpostorIds: string[];
+  impostorIds: string[];
   word: WordCard | null;
   deadline: number | null;
+  clueDeadline: number | null;
   timer?: ReturnType<typeof setTimeout>;
   votes: Map<string, string>;
   candidates: string[];
@@ -64,13 +92,15 @@ export interface Room {
   result: PublicRoom['result'];
   updated: number;
   previousWordId?: string;
-  requests: Map<string, Set<string>>;
+  requests: Map<string, Map<string, CommandResult>>;
 }
 export interface EngineOptions {
   now?: () => number;
   revealMs?: number;
   resultMs?: number;
-  onChange?: (room: Room, privateChanged: boolean) => void;
+  effectMs?: number;
+  random?: (max: number) => number;
+  onChange?: (room: Room, privateChanged: boolean | string[]) => void;
   onRemove?: (code: string, playerId: string, sockets: string[]) => void;
   onExpire?: (code: string) => void;
 }
@@ -97,7 +127,7 @@ export class GameEngine {
       )
     );
   }
-  private touch(room: Room, privateChanged = false) {
+  private touch(room: Room, privateChanged: boolean | string[] = false) {
     room.updated = this.now();
     room.revision++;
     this.options.onChange?.(room, privateChanged);
@@ -168,14 +198,16 @@ export class GameEngine {
         clueSeconds: 60,
         allowSpectators: false,
         selectionMode: 'random',
+        impostorCount: 1,
       },
       players: [],
       teacherToken: secret,
       teacherSockets: new Set([socketId]),
-      manualImpostorId: null,
-      impostorId: null,
+      manualImpostorIds: [],
+      impostorIds: [],
       word: null,
       deadline: null,
+      clueDeadline: null,
       votes: new Map(),
       candidates: [],
       runoff: false,
@@ -220,6 +252,13 @@ export class GameEngine {
       clue: null,
       voted: false,
       sockets: new Set([socketId]),
+      powers: [],
+      effects: freshEffects(),
+      usedPowerRound: 0,
+      fakeClue: null,
+      rewriteUntil: 0,
+      notifications: [],
+      noticeSequence: 0,
     };
     room.players.push(p);
     this.touch(room);
@@ -266,9 +305,25 @@ export class GameEngine {
       phase: room.phase,
       round: room.round,
       settings: structuredClone(room.settings),
-      players: room.players.map(({ token: _, sockets: __, ...p }) => ({ ...p })),
+      // Explicit allowlist: effects, loadouts, notification recipients and authors stay private.
+      players: room.players.map((p) => ({
+        id: p.id,
+        name: p.name,
+        avatar: p.avatar,
+        online: p.online,
+        ready: p.ready,
+        alive: p.alive,
+        spectator: p.spectator,
+        clue: p.clue ?? p.fakeClue,
+        voted: p.voted,
+      })),
       teacherOnline: room.teacherSockets.size > 0,
       deadline: room.deadline,
+      clueDeadline: room.clueDeadline,
+      clueCount: this.active(room).filter((p) => p.clue !== null).length,
+      eligibleVoters: this.active(room).filter(
+        (p) => p.effects.bannedVoteRound !== room.round || room.round === 0,
+      ).length,
       category: room.word?.categoria ?? null,
       candidates: [...room.candidates],
       voteResult: room.voteResult ? structuredClone(room.voteResult) : null,
@@ -284,8 +339,8 @@ export class GameEngine {
       return {
         kind: 'teacher',
         word: room.word ? { ...room.word } : null,
-        impostorId: room.impostorId,
-        manualImpostorId: room.manualImpostorId,
+        impostorIds: [...room.impostorIds],
+        manualImpostorIds: [...room.manualImpostorIds],
       };
     }
     const p = this.player(room, auth);
@@ -293,7 +348,7 @@ export class GameEngine {
       ? 'spectator'
       : !room.word
         ? null
-        : p.id === room.impostorId
+        : room.impostorIds.includes(p.id)
           ? 'impostor'
           : 'civil';
     return {
@@ -301,6 +356,13 @@ export class GameEngine {
       playerId: p.id,
       role,
       word: role === 'civil' && room.word ? { ...room.word } : null,
+      impostorIds: role === 'impostor' ? [...room.impostorIds] : [],
+      powers: p.powers.map((s) => ({ ...s })),
+      usedPowerRound: p.usedPowerRound,
+      effects: structuredClone(p.effects),
+      clueSubmitted: p.clue !== null,
+      clueDeadline: room.phase === 'CLUES' ? p.rewriteUntil || room.clueDeadline : null,
+      notifications: p.notifications.map((n) => ({ ...n })),
     };
   }
   execute(auth: Auth, cmd: Command) {
@@ -310,24 +372,55 @@ export class GameEngine {
     else if (auth.kind === 'player') this.player(room, auth);
     else fail('FORBIDDEN', 'O telão é somente para leitura.');
     const key = auth.token!;
-    const seen = room.requests.get(key) ?? new Set<string>();
-    if (seen.has(cmd.requestId)) return;
+    const seen = room.requests.get(key) ?? new Map<string, CommandResult>();
+    if (seen.has(cmd.requestId)) return seen.get(cmd.requestId)!;
+    let result: CommandResult = {};
+    let privateChanged: boolean | string[] = false;
     switch (cmd.type) {
       case 'player:ready': {
         this.requirePhase(room, 'LOBBY');
         const p = this.player(room, auth);
+        if (cmd.ready && (p.powers.length !== 2 || new Set(p.powers.map((s) => s.id)).size !== 2))
+          fail('CHOOSE_POWERS', 'Escolha dois poderes diferentes antes de ficar pronto.');
         p.avatar = cmd.avatar;
         p.ready = cmd.ready;
+        break;
+      }
+      case 'player:powers': {
+        this.requirePhase(room, 'LOBBY');
+        const p = this.player(room, auth);
+        if (
+          cmd.powers.length > 2 ||
+          new Set(cmd.powers).size !== cmd.powers.length ||
+          cmd.powers.some((id) => !POWER_IDS.includes(id))
+        )
+          fail('INVALID_POWERS', 'Escolha até dois poderes diferentes.');
+        p.powers = cmd.powers.map((id) => ({ id, readyRound: 0, used: false }));
+        p.ready = false;
+        privateChanged = [p.id];
+        break;
+      }
+      case 'power:activate': {
+        const activated = this.activatePower(room, auth, cmd);
+        result = { activation: activated.notice };
+        privateChanged = activated.changed;
         break;
       }
       case 'teacher:settings': {
         this.teacher(room, auth);
         this.requirePhase(room, 'LOBBY');
+        const ids = cmd.manualImpostorIds;
+        if (
+          ![1, 2, 3].includes(cmd.settings.impostorCount) ||
+          ids.length > 3 ||
+          new Set(ids).size !== ids.length ||
+          ids.some((id) => !room.players.some((p) => p.id === id && !p.spectator))
+        )
+          fail('SELECT_IMPOSTOR', 'Escolha participantes diferentes para os impostores.');
         room.settings = structuredClone(cmd.settings);
-        room.manualImpostorId = cmd.manualImpostorId;
-        this.touch(room, true);
-        this.remember(room, key, seen, cmd.requestId);
-        return;
+        room.manualImpostorIds = [...ids];
+        privateChanged = ['teacher'];
+        break;
       }
       case 'teacher:remove': {
         this.teacher(room, auth);
@@ -337,7 +430,8 @@ export class GameEngine {
           fail('PLAYER_NOT_FOUND', 'Aluno não encontrado.');
         room.players = room.players.filter((x) => x.id !== p.id);
         room.requests.delete(p.token);
-        if (room.manualImpostorId === p.id) room.manualImpostorId = null;
+        room.manualImpostorIds = room.manualImpostorIds.filter((id) => id !== p.id);
+        privateChanged = ['teacher'];
         this.options.onRemove?.(room.code, p.id, [...p.sockets]);
         break;
       }
@@ -345,18 +439,28 @@ export class GameEngine {
         this.teacher(room, auth);
         this.requirePhase(room, 'LOBBY');
         const alive = this.active(room);
-        if (alive.length < 3) fail('NOT_ENOUGH_PLAYERS', 'São necessários pelo menos 3 alunos.');
+        const minimum = room.settings.impostorCount * 2 + 1;
+        if (alive.length < minimum)
+          fail(
+            'NOT_ENOUGH_PLAYERS',
+            `São necessários pelo menos ${minimum} alunos para ${room.settings.impostorCount} impostor(es).`,
+          );
         if (alive.some((p) => !p.ready || !p.online))
           fail('NOT_READY', 'Todos os alunos precisam estar conectados e prontos.');
+        if (alive.some((p) => p.powers.length !== 2))
+          fail('CHOOSE_POWERS', 'Todos precisam escolher dois poderes.');
         if (
           room.settings.selectionMode === 'manual' &&
-          !alive.some((p) => p.id === room.manualImpostorId)
+          (room.manualImpostorIds.length !== room.settings.impostorCount ||
+            room.manualImpostorIds.some((id) => !alive.some((p) => p.id === id)))
         )
           fail('SELECT_IMPOSTOR', 'Escolha o impostor antes de começar.');
-        room.impostorId =
-          room.settings.selectionMode === 'manual'
-            ? room.manualImpostorId
-            : alive[randomInt(alive.length)].id;
+        const poolIds = alive.map((p) => p.id);
+        room.impostorIds =
+          room.settings.selectionMode === 'manual' ? [...room.manualImpostorIds] : [];
+        if (room.settings.selectionMode === 'random')
+          for (let i = 0; i < room.settings.impostorCount; i++)
+            room.impostorIds.push(poolIds.splice(randomInt(poolIds.length), 1)[0]);
         const pool = CATALOG.filter(
           (w) => room.settings.categories.includes(w.categoria) && w.id !== room.previousWordId,
         );
@@ -367,39 +471,44 @@ export class GameEngine {
         this.schedule(room, this.options.revealMs ?? 6000, () => {
           if (room.phase !== 'ROLE_REVEAL') return;
           this.startClues(room);
-          this.touch(room);
+          this.touch(room, true);
         });
-        this.touch(room, true);
-        this.remember(room, key, seen, cmd.requestId);
-        return;
+        privateChanged = true;
+        break;
       }
       case 'clue:submit': {
         this.requirePhase(room, 'CLUES');
-        if (room.deadline !== null && this.now() >= room.deadline) {
-          this.endClues(room);
-          this.touch(room);
-          fail('TIME_UP', 'O tempo para enviar dicas terminou.');
-        }
         const p = this.eligible(room, auth);
+        if (this.now() >= (p.rewriteUntil || room.clueDeadline || 0)) {
+          this.advanceClues(room);
+          this.touch(room, true);
+          fail('TIME_UP', 'O tempo para enviar sua dica terminou.');
+        }
+        if (p.effects.silencedUntil > this.now())
+          fail('SILENCED', 'Você está silenciado. Aguarde o contador terminar.');
         if (p.clue !== null) fail('ALREADY_SUBMITTED', 'Você já enviou sua dica nesta rodada.');
-        const text = cmd.text
-          .normalize('NFC')
-          .replace(/[\p{Cc}\p{Cf}]/gu, ' ')
-          .trim()
-          .replace(/\s+/g, ' ');
-        if (!text || Array.from(text).length > 80)
-          fail('INVALID_CLUE', 'Escreva uma dica com até 80 caracteres.');
-        const normalized = ` ${normalize(text)} `;
-        if (p.id !== room.impostorId && normalized.includes(` ${normalize(room.word!.nome)} `))
-          fail('WORD_IN_CLUE', 'Dê uma pista sem escrever a palavra secreta.');
+        const text = this.clueText(room, p, cmd.text);
+        if (
+          p.effects.forbiddenLetter &&
+          normalize(text).includes(p.effects.forbiddenLetter.toLowerCase())
+        )
+          fail(
+            'FORBIDDEN_LETTER',
+            `Sua dica não pode conter a letra ${p.effects.forbiddenLetter}, mesmo acentuada.`,
+          );
         p.clue = text;
-        if (this.active(room).every((p) => p.clue !== null)) this.endClues(room);
+        p.fakeClue = null;
+        p.effects.forbiddenLetter = null;
+        privateChanged = [p.id];
+        this.advanceClues(room);
         break;
       }
       case 'clues:close':
         this.teacher(room, auth);
         this.requirePhase(room, 'CLUES');
-        this.endClues(room);
+        room.clueDeadline = this.now();
+        this.advanceClues(room);
+        privateChanged = true;
         break;
       case 'vote:open': {
         this.teacher(room, auth);
@@ -414,6 +523,8 @@ export class GameEngine {
       case 'vote:submit': {
         this.requirePhase(room, 'VOTING');
         const p = this.eligible(room, auth);
+        if (p.effects.bannedVoteRound === room.round)
+          fail('VOTE_BANNED', 'Exílio do Veredito impede seu voto nesta rodada.');
         if (room.votes.has(p.id)) fail('ALREADY_VOTED', 'Seu voto já foi confirmado.');
         if (cmd.targetId === p.id) fail('SELF_VOTE', 'Você não pode votar em si mesmo.');
         if (
@@ -429,13 +540,13 @@ export class GameEngine {
         this.teacher(room, auth);
         this.requirePhase(room, 'VOTING');
         this.closeVote(room);
-        this.remember(room, key, seen, cmd.requestId);
-        return;
+        break;
       case 'round:next':
         this.teacher(room, auth);
         this.requirePhase(room, 'WAITING_FOR_NEXT_ROUND');
         room.round++;
         this.startClues(room);
+        privateChanged = true;
         break;
       case 'game:end':
         this.teacher(room, auth);
@@ -450,7 +561,7 @@ export class GameEngine {
         room.phase = 'LOBBY';
         room.round = 0;
         room.result = null;
-        room.impostorId = null;
+        room.impostorIds = [];
         room.word = null;
         let seats = room.players.filter((p) => !p.spectator).length;
         room.players.forEach((p) => {
@@ -462,6 +573,12 @@ export class GameEngine {
           p.ready = false;
           p.clue = null;
           p.voted = false;
+          p.fakeClue = null;
+          p.rewriteUntil = 0;
+          p.effects = freshEffects();
+          p.powers = p.powers.map((s) => ({ id: s.id, readyRound: 0, used: false }));
+          p.usedPowerRound = 0;
+          p.notifications = [];
         });
         room.votes.clear();
         room.candidates = [];
@@ -469,9 +586,9 @@ export class GameEngine {
         room.history = [];
         room.eliminations = [];
         room.runoff = false;
-        this.touch(room, true);
-        this.remember(room, key, seen, cmd.requestId);
-        return;
+        room.clueDeadline = null;
+        privateChanged = true;
+        break;
       }
       case 'session:leave': {
         if (auth.kind === 'player' && room.phase === 'LOBBY') {
@@ -486,13 +603,11 @@ export class GameEngine {
       default:
         fail('INVALID_COMMAND', 'Comando inválido.');
     }
-    this.remember(room, key, seen, cmd.requestId);
-    this.touch(room);
-  }
-  private remember(room: Room, key: string, seen: Set<string>, requestId: string) {
-    seen.add(requestId);
-    if (seen.size > 500) seen.delete(seen.values().next().value!);
+    seen.set(cmd.requestId, result);
+    if (seen.size > 256) seen.delete(seen.keys().next().value!);
     room.requests.set(key, seen);
+    this.touch(room, privateChanged);
+    return result;
   }
   private startClues(room: Room) {
     room.phase = 'CLUES';
@@ -503,14 +618,40 @@ export class GameEngine {
     room.players.forEach((p) => {
       p.clue = null;
       p.voted = false;
+      p.fakeClue = null;
+      p.rewriteUntil = 0;
+      p.effects.hiddenImageRounds = p.effects.hiddenImageRounds.filter((r) => r >= room.round);
     });
     room.history.push({ round: room.round, clues: [], votes: [] });
-    this.schedule(room, room.settings.clueSeconds * 1000, () => {
-      if (room.phase === 'CLUES') {
-        this.endClues(room);
-        this.touch(room);
-      }
-    });
+    room.clueDeadline = this.now() + room.settings.clueSeconds * 1000;
+    this.advanceClues(room);
+  }
+  private advanceClues(room: Room) {
+    const now = this.now();
+    const alive = this.active(room);
+    const pending = alive.filter((p) => p.clue === null && p.rewriteUntil > now);
+    const allDone = alive.every(
+      (p) => p.clue !== null || (p.rewriteUntil > 0 && p.rewriteUntil <= now),
+    );
+    if (allDone || (now >= (room.clueDeadline ?? 0) && pending.length === 0)) {
+      this.endClues(room);
+      return;
+    }
+    this.clearTimer(room);
+    const normal = room.clueDeadline! > now;
+    room.deadline = normal ? room.clueDeadline : Math.max(...pending.map((p) => p.rewriteUntil));
+    const future = pending.map((p) => p.rewriteUntil);
+    if (normal) future.push(room.clueDeadline!);
+    const wake = Math.min(...future);
+    room.timer = setTimeout(
+      () => {
+        if (room.phase !== 'CLUES') return;
+        this.advanceClues(room);
+        this.touch(room, true);
+      },
+      Math.max(1, wake - now),
+    );
+    room.timer.unref();
   }
   private endClues(room: Room) {
     this.clearTimer(room);
@@ -519,12 +660,15 @@ export class GameEngine {
     history.clues = this.active(room).map((p) => ({
       playerId: p.id,
       name: p.name,
-      text: p.clue ?? 'Sem dica',
+      text: p.clue ?? p.fakeClue ?? 'Sem dica',
     }));
   }
   private closeVote(room: Room) {
     const counts: Record<string, number> = {};
-    for (const id of room.votes.values()) counts[id] = (counts[id] ?? 0) + 1;
+    for (const [voter, id] of room.votes)
+      counts[id] =
+        (counts[id] ?? 0) +
+        (room.players.find((p) => p.id === voter)!.effects.doubleVoteRound === room.round ? 2 : 1);
     const max = Math.max(0, ...Object.values(counts));
     const tied = Object.keys(counts).filter((id) => counts[id] === max);
     const result: VoteResult = {
@@ -533,7 +677,24 @@ export class GameEngine {
       eliminatedId: tied.length === 1 ? tied[0] : null,
       runoff: room.runoff,
       noVotes: max === 0,
+      protectedId: null,
     };
+    const protectedPlayer = room.players.find(
+      (p) => p.id === result.eliminatedId && p.effects.aegis,
+    );
+    if (protectedPlayer) {
+      protectedPlayer.effects.aegis = false;
+      result.protectedId = protectedPlayer.id;
+      result.eliminatedId = null;
+      this.notice(
+        room,
+        protectedPlayer,
+        'aegis',
+        'Seu escudo protegeu você',
+        'Égide do Destino impediu sua eliminação. O escudo foi destruído.',
+        'success',
+      );
+    }
     room.voteResult = result;
     room.history.at(-1)!.votes.push(structuredClone(result));
     room.phase = 'VOTE_RESULTS';
@@ -543,8 +704,10 @@ export class GameEngine {
         p.alive = false;
         room.eliminations.push({ playerId: p.id, name: p.name, round: room.round });
         room.phase = 'ELIMINATION';
-        if (p.id === room.impostorId) this.finish(room, 'civis');
-        else if (this.active(room).length === 2) this.finish(room, 'impostor');
+        const impostors = this.active(room).filter((p) => room.impostorIds.includes(p.id)).length;
+        const civilians = this.active(room).length - impostors;
+        if (impostors === 0) this.finish(room, 'civis');
+        else if (impostors >= civilians) this.finish(room, 'impostor');
         else
           this.schedule(room, this.options.resultMs ?? 2800, () => {
             room.phase = 'WAITING_FOR_NEXT_ROUND';
@@ -560,14 +723,232 @@ export class GameEngine {
         room.candidates = [];
         room.phase = 'WAITING_FOR_NEXT_ROUND';
       }
-      this.touch(room);
+      this.touch(room, true);
     });
-    this.touch(room);
+    this.touch(room, protectedPlayer ? [protectedPlayer.id] : false);
   }
   private finish(room: Room, winner: 'civis' | 'impostor' | 'cancelada') {
     this.clearTimer(room);
     room.phase = 'GAME_OVER';
-    room.result = { winner, impostorId: room.impostorId!, word: { ...room.word! } };
+    room.result = { winner, impostorIds: [...room.impostorIds], word: { ...room.word! } };
+  }
+  private clueText(room: Room, author: Player, raw: string) {
+    const text = raw
+      .normalize('NFC')
+      .replace(/[\p{Cc}\p{Cf}]/gu, ' ')
+      .trim()
+      .replace(/\s+/g, ' ');
+    if (!text || Array.from(text).length > 80)
+      fail('INVALID_CLUE', 'Escreva uma dica com até 80 caracteres.');
+    if (
+      !room.impostorIds.includes(author.id) &&
+      ` ${normalize(text)} `.includes(` ${normalize(room.word!.nome)} `)
+    )
+      fail('WORD_IN_CLUE', 'Dê uma pista sem escrever a palavra secreta.');
+    return text;
+  }
+  private notice(
+    room: Room,
+    player: Player,
+    powerId: PowerId,
+    title: string,
+    message: string,
+    tone: PowerNotice['tone'],
+  ) {
+    const notice: PowerNotice = {
+      id: ++player.noticeSequence,
+      powerId,
+      title,
+      message,
+      tone,
+      round: room.round,
+    };
+    player.notifications.push(notice);
+    if (player.notifications.length > 32) player.notifications.shift();
+    return notice;
+  }
+  private activatePower(room: Room, auth: Auth, cmd: Extract<Command, { type: 'power:activate' }>) {
+    const actor = this.eligible(room, auth);
+    const def = POWERS[cmd.powerId];
+    const slot = actor.powers.find((p) => p.id === cmd.powerId);
+    if (!def || !slot) fail('POWER_NOT_SELECTED', 'Este poder não foi escolhido para a partida.');
+    this.requirePhase(room, ...ACTIVE_POWER_PHASES);
+    if (
+      def.window === 'clues' &&
+      (room.phase !== 'CLUES' || this.now() >= (room.clueDeadline ?? 0))
+    )
+      fail('POWER_WINDOW', 'Este poder só pode ser ativado durante o prazo normal das dicas.');
+    if (actor.usedPowerRound === room.round)
+      fail('ONE_POWER_PER_ROUND', 'Você já ativou um poder nesta rodada.');
+    if (def.once && slot!.used) fail('POWER_SPENT', 'Este poder já foi usado nesta partida.');
+    if (slot!.readyRound > room.round)
+      fail('POWER_COOLDOWN', `Este poder volta na rodada ${slot!.readyRound}.`);
+    const target =
+      def.target === 'self'
+        ? actor
+        : room.players.find((p) => p.id === cmd.targetId && p.alive && !p.spectator);
+    if (
+      !target ||
+      (def.target === 'other' && target.id === actor.id) ||
+      (def.target === 'self' && cmd.targetId && cmd.targetId !== actor.id)
+    )
+      fail('INVALID_TARGET', 'Escolha um participante vivo e elegível.');
+    const to = target!;
+    const e = to.effects;
+    const now = this.now();
+    const effectMs = this.options.effectMs ?? 20_000;
+    const duplicate = () =>
+      fail('EFFECT_ACTIVE', 'Esse efeito já está ativo. Seu poder não foi gasto.');
+    let fakeText = '';
+    switch (cmd.powerId) {
+      case 'silence':
+        if (to.clue !== null || now >= (to.rewriteUntil || room.clueDeadline || 0))
+          fail('INVALID_TARGET', 'Escolha alguém que ainda pode enviar uma dica.');
+        if (e.silencedUntil > now) duplicate();
+        break;
+      case 'letter':
+        if (e.forbiddenLetter) duplicate();
+        break;
+      case 'aegis':
+        if (e.aegis) duplicate();
+        break;
+      case 'double_vote':
+        if (e.doubleVoteRound === room.round) duplicate();
+        if (e.bannedVoteRound === room.round)
+          fail('VOTE_BANNED', 'Você não pode votar nesta rodada. Seu poder não foi gasto.');
+        if (room.phase === 'VOTING' && to.voted)
+          fail('ALREADY_VOTED', 'Ative antes de confirmar seu voto.');
+        break;
+      case 'ban_vote':
+        if (e.bannedVoteRound === room.round) duplicate();
+        if (room.phase === 'VOTING' && to.voted)
+          fail('ALREADY_VOTED', 'Esse jogador já confirmou o voto.');
+        break;
+      case 'echo':
+        if (to.clue !== null || now >= (to.rewriteUntil || room.clueDeadline || 0))
+          fail('INVALID_TARGET', 'Escolha alguém que ainda não enviou sua dica verdadeira.');
+        if (to.fakeClue !== null) duplicate();
+        fakeText = this.clueText(room, actor, cmd.text ?? '');
+        break;
+      case 'refuge':
+        if (e.refuge) duplicate();
+        break;
+      case 'erase':
+        if (to.clue === null)
+          fail('INVALID_TARGET', 'Escolha alguém que já enviou uma dica verdadeira.');
+        break;
+      case 'veil':
+        if (e.hiddenImageRounds.includes(room.round + 1)) duplicate();
+        break;
+    }
+    // Validation above is side-effect free. Every accepted attempt below is charged exactly once.
+    actor.usedPowerRound = room.round;
+    slot!.used = true;
+    slot!.readyRound = room.round + 4;
+    const changed = [...new Set([actor.id, to.id])];
+    const hostile = def.target === 'other';
+    if (hostile && e.refuge) {
+      e.refuge = false;
+      const notice = this.notice(
+        room,
+        actor,
+        cmd.powerId,
+        'Poder bloqueado',
+        `${def.name} foi absorvido por uma proteção. A tentativa foi usada.`,
+        'info',
+      );
+      this.notice(
+        room,
+        to,
+        'refuge',
+        'Sua barreira protegeu você',
+        `Refúgio Estoico absorveu ${def.name}. A barreira foi consumida.`,
+        'success',
+      );
+      return { notice, changed };
+    }
+    let message = '';
+    let targetMessage = '';
+    let tone: PowerNotice['tone'] = 'success';
+    switch (cmd.powerId) {
+      case 'silence':
+        e.silencedUntil = now + effectMs;
+        if (to.rewriteUntil > now)
+          to.rewriteUntil = Math.max(to.rewriteUntil, e.silencedUntil + effectMs);
+        message = `${to.name} não pode escrever dicas por 20 segundos.`;
+        targetMessage =
+          'Você não pode escrever nem enviar dicas por 20 segundos. Seu rascunho foi preservado.';
+        this.advanceClues(room);
+        break;
+      case 'letter':
+        e.forbiddenLetter = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[(this.options.random ?? randomInt)(26)];
+        message = `${to.name} não poderá usar a letra ${e.forbiddenLetter} na próxima dica verdadeira.`;
+        targetMessage = `Sua próxima dica verdadeira não pode conter a letra ${e.forbiddenLetter}, mesmo acentuada.`;
+        break;
+      case 'aegis':
+        e.aegis = true;
+        message = `${to.name} está protegido contra a próxima eliminação.`;
+        targetMessage =
+          'Você está protegido contra a próxima eliminação. O escudo permanece até ser consumido.';
+        break;
+      case 'double_vote':
+        e.doubleVoteRound = room.round;
+        message = 'Seu voto vale por dois nesta rodada, incluindo os desempates.';
+        break;
+      case 'ban_vote':
+        e.bannedVoteRound = room.round;
+        message = `${to.name} não poderá votar nesta rodada.`;
+        targetMessage = 'Você não poderá votar nesta rodada, incluindo os desempates.';
+        break;
+      case 'oracle': {
+        const success = (this.options.random ?? randomInt)(2) === 1;
+        message = success
+          ? `${to.name}: ${room.impostorIds.includes(to.id) ? 'Impostor' : 'Civil'}.`
+          : 'A leitura falhou. Nenhum papel foi revelado.';
+        targetMessage = success
+          ? 'Uma consulta revelou seu papel a alguém. A identidade de quem consultou permanece secreta.'
+          : 'Uma tentativa de consultar seu papel falhou. Nenhum papel foi revelado.';
+        if (!success) tone = 'info';
+        break;
+      }
+      case 'echo':
+        to.fakeClue = fakeText;
+        message = `Uma dica falsa apareceu no nome de ${to.name}.`;
+        targetMessage =
+          'Uma dica falsa apareceu no seu nome. Envie sua dica verdadeira para substituí-la.';
+        break;
+      case 'refuge':
+        e.refuge = true;
+        message =
+          'Você está protegido do próximo poder hostil. A barreira permanece até absorvê-lo.';
+        break;
+      case 'erase':
+        to.clue = null;
+        to.fakeClue = null;
+        to.rewriteUntil = Math.max(now, e.silencedUntil) + effectMs;
+        message = `A dica de ${to.name} foi apagada. O alvo tem 20 segundos para reenviar.`;
+        targetMessage =
+          'Sua dica foi apagada. Você tem 20 segundos para reenviar; se estiver silenciado, o prazo começa após o silêncio.';
+        this.advanceClues(room);
+        break;
+      case 'veil':
+        e.hiddenImageRounds.push(room.round + 1);
+        message = `${to.name} ficará sem a imagem do item na próxima rodada.`;
+        targetMessage =
+          'Na próxima rodada a imagem do item ficará oculta. O nome da palavra e as pistas continuam visíveis.';
+        break;
+    }
+    const notice = this.notice(room, actor, cmd.powerId, `${def.name} ativado`, message, tone);
+    if (to !== actor)
+      this.notice(
+        room,
+        to,
+        cmd.powerId,
+        `Você foi alvo de ${def.name}`,
+        targetMessage,
+        cmd.powerId === 'aegis' ? 'success' : 'danger',
+      );
+    return { notice, changed };
   }
   private sweep() {
     for (const [code, room] of this.rooms) {

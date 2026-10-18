@@ -1,5 +1,6 @@
 import { io, type Socket } from 'socket.io-client';
 import { randomUUID } from 'node:crypto';
+import { PROTOCOL_VERSION } from '@impostor/shared';
 import type {
   Ack,
   ClientEvents,
@@ -59,7 +60,11 @@ export class Client {
     const start = performance.now();
     const result: Ack = await this.socket
       .timeout(15000)
-      .emitWithAck('command', { ...data, requestId: data.requestId ?? randomUUID() } as Command);
+      .emitWithAck('command', {
+        protocolVersion: PROTOCOL_VERSION,
+        ...data,
+        requestId: data.requestId ?? randomUUID(),
+      } as Command);
     this.latencies.push(performance.now() - start);
     if (result.ok) {
       if (result.snapshot) {

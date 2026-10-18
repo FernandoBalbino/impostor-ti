@@ -1,0 +1,100 @@
+{
+  "base": "https://fernandobalbino.github.io/impostor-ti/",
+  "api": "https://impostor-ti-api.onrender.com",
+  "checkedAt": "2026-10-18T15:18:04.831Z",
+  "players": 24,
+  "roles": [
+    "impostor",
+    "civil",
+    "teacher",
+    "display"
+  ],
+  "checks": [
+    "exclusive-absent-from-lobby",
+    "exclusive-automatic-three-slots-impostor-only-private-letter",
+    "vestige-reconnect-keeps-letter-and-cooldown",
+    "simultaneous-modal-all-four-roles-and-26-clients",
+    "zero-to-final-fill-over-time",
+    "equal-gold-leaders-on-tie",
+    "unequal-bars-duration-proportional-to-votes",
+    "runoff-and-aegis-rules-preserved",
+    "24-voted-players-scroll",
+    "desktop-mobile-modal-without-overflow",
+    "touch-review-and-keyboard-scroll",
+    "reduced-motion",
+    "empty-vote-result-no-invented-players",
+    "exclusive-cooldown-4-3-2-1-ready-round-5",
+    "final-reveal-not-obscured-or-changed"
+  ],
+  "layouts": [
+    {
+      "name": "empate-revisao",
+      "width": 1366,
+      "height": 768,
+      "overflow": false,
+      "top": 100.33196258544922,
+      "bottom": 670.9569625854492,
+      "scroll": false,
+      "broken": 0
+    },
+    {
+      "name": "empate-revisao",
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "top": 183.515625,
+      "bottom": 660.46875,
+      "scroll": false,
+      "broken": 0
+    },
+    {
+      "name": "ranking-24-votados",
+      "width": 1366,
+      "height": 768,
+      "overflow": false,
+      "top": 38.91740036010742,
+      "bottom": 730.1049003601074,
+      "scroll": true,
+      "broken": 0
+    },
+    {
+      "name": "ranking-24-votados",
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "top": 42.203125,
+      "bottom": 801.796875,
+      "scroll": true,
+      "broken": 0
+    }
+  ],
+  "animations": [
+    {
+      "case": "tie",
+      "openingSpreadMs": 5,
+      "samples": [
+        {
+          "ms": 0,
+          "scale": 0,
+          "duration": "1.8s"
+        },
+        {
+          "ms": 120,
+          "scale": 0.0616611,
+          "duration": "1.8s"
+        },
+        {
+          "ms": 700,
+          "scale": 0.376478,
+          "duration": "1.8s"
+        },
+        {
+          "ms": 2000,
+          "scale": 1,
+          "duration": "1.8s"
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

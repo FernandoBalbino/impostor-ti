@@ -444,3 +444,25 @@
     display: none;
   }
 }
+.power-icon.exclusive-power.available {
+  border-color: #ff657a;
+  box-shadow:
+    0 0 12px #ed324b65,
+    inset 0 0 12px #8d172f33;
+}
+.exclusive-label {
+  color: #ff91a0;
+}
+.power-exclusive-mark {
+  position: absolute;
+  left: -4px;
+  bottom: -4px;
+  background: #861e35;
+  color: #ffcad2;
+  border: 1px solid #f4657f;
+  border-radius: 3px;
+  padding: 0 3px;
+  font:
+    700 10px/13px Pixelify,
+    monospace;
+}

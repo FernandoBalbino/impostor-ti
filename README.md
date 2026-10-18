@@ -1,6 +1,6 @@
 # Impostor TI
 
-Um laboratório, uma palavra secreta, dez poderes e **um a três impostores**. Jogo de dedução social para uma turma de até **24 alunos individuais**, com o professor controlando a investigação em tempo real.
+Um laboratório, uma palavra secreta, dez poderes estratégicos, uma habilidade exclusiva dos impostores e **um a três impostores**. Jogo de dedução social para uma turma de até **24 alunos individuais**, com o professor controlando a investigação em tempo real.
 
 - **Jogar:** https://fernandobalbino.github.io/impostor-ti/
 - **Servidor:** https://impostor-ti-api.onrender.com/health
@@ -9,7 +9,7 @@ Um laboratório, uma palavra secreta, dez poderes e **um a três impostores**. J
 
 ![Impostor TI com 24 participantes simulados e seus nomes](docs/preview.png)
 
-**Validação da versão com poderes:** 63 testes aprovados, telas conferidas em computador e celular e sessão pública de **30 minutos e 6 segundos** com 24 alunos simulados, professor e telão. Foram 33 partidas, 15.312 comandos e nenhuma falha detectada; latência p95 de **173 ms**. Resultados e limites em [docs/VALIDATION.md](docs/VALIDATION.md).
+**Versão 2.1:** Vestígio do Invisível automático para impostores e ranking de votos com barras animadas. **70 testes aprovados** e fluxo de navegador conferido com 24 alunos simulados, professor e telão em computador e celular. A carga pública de 30 minutos registrada para a versão 2.0 é histórica e não inclui estas duas novidades. Resultados e limites em [docs/VALIDATION.md](docs/VALIDATION.md).
 
 ## Como jogar
 

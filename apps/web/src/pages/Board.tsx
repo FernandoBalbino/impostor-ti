@@ -8,6 +8,7 @@ import {
 } from '@impostor/shared';
 import { Avatar, Modal, asset } from '../components/ui';
 import { PowerTray, PowerNotifications } from '../components/Powers';
+import { VoteResultsModal } from '../components/VoteResults';
 import {
   ArrowRightIcon,
   CheckIcon,
@@ -398,6 +399,15 @@ export function GameBoard({ tools }: { tools: ReactNode }) {
   const [clue, setClue] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
   const [history, setHistory] = useState(false);
+  const [dismissedRanking, setDismissedRanking] = useState('');
+  const [reviewRanking, setReviewRanking] = useState('');
+  const rankingKey = `${state.code}:${state.round}:${state.history.at(-1)?.votes.length ?? 0}`;
+  const canReviewRanking =
+    !!state.voteResult && ['TIEBREAK', 'WAITING_FOR_NEXT_ROUND', 'GAME_OVER'].includes(state.phase);
+  const showRanking =
+    !!state.voteResult &&
+    ((state.phase === 'VOTE_RESULTS' && dismissedRanking !== rankingKey) ||
+      (canReviewRanking && reviewRanking === `${rankingKey}:${state.phase}`));
   useEffect(() => {
     if (!['CLUES', 'ROLE_REVEAL'].includes(state.phase)) return;
     setNow(Date.now());
@@ -489,6 +499,14 @@ export function GameBoard({ tools }: { tools: ReactNode }) {
         <button className="ghost" onClick={() => setHistory(true)}>
           <ClockCounterClockwiseIcon /> Histórico
         </button>
+        {canReviewRanking && (
+          <button
+            className="ghost"
+            onClick={() => setReviewRanking(`${rankingKey}:${state.phase}`)}
+          >
+            Ver ranking da votação
+          </button>
+        )}
         {tools}
       </div>
       <div className="board-layout">
@@ -644,6 +662,17 @@ export function GameBoard({ tools }: { tools: ReactNode }) {
         </section>
       </div>
       <PowerNotifications />
+      {showRanking && (
+        <VoteResultsModal
+          key={rankingKey}
+          room={state}
+          result={state.voteResult!}
+          onClose={() => {
+            setDismissedRanking(rankingKey);
+            setReviewRanking('');
+          }}
+        />
+      )}
       {history && (
         <Modal title="Histórico da investigação" onClose={() => setHistory(false)}>
           <div className="history-list">

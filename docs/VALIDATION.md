@@ -1,6 +1,15 @@
 # Validação — Impostor TI
 
-## Poderes e até três impostores — 18/10/2026
+## Versão 2.1 — Vestígio do Invisível e ranking animado
+
+- TypeScript, builds e **70/70 testes** aprovados. A regressão cobre todas as regras anteriores de voto e revelação.
+- Vestígio automático para cada impostor, ausente do lobby, sem ocupar as duas escolhas; civis impedidos pelo servidor; somente a primeira letra, incluindo acentos, entregue em segredo. Recarga 1→5, limite compartilhado por rodada, reconexão idempotente e limpeza na nova partida.
+- Ranking filtra zero votos, ordena contagens ponderadas sem modificar o resultado, conserva posições empatadas e usa larguras e durações proporcionais aos votos. Mantidos `closeVote`, os tempos das fases, a eliminação, o escudo e a revelação final.
+- Navegador local com 24 alunos, professor e telão: modal nas quatro interfaces, empate 12/12, desempate 15/9, escudo preservando o jogador, 24 participantes votados com rolagem, votação vazia, recarga completa do Vestígio e revelação final. Sem erros de console ou transbordamento em 1366×768 e 390×844; teclado, toque e movimento reduzido conferidos.
+- A animação foi medida no navegador: escala inicial **0**, crescimento intermediário e escala final **1**. Empatados tiveram duração igual de 1,8 s; 15 e 9 votos tiveram durações de 1,8 e 1,08 s. Relatório local: `qa-evidence/vestige-ranking/local-browser.json`.
+- Publicação e conferência pública desta revisão serão registradas após sua conclusão. A sessão de 30 minutos abaixo pertence à versão 2.0; não foi repetida para esta alteração.
+
+## Histórico — versão 2.0: poderes e até três impostores — 18/10/2026
 
 - TypeScript, **63/63 testes** e builds do frontend e servidor aprovados localmente.
 - Novos testes cobrem os dez poderes, recargas, tentativa fracassada, barreiras, escudo de uso único, reescrita com silêncio, dicas falsas, votos dobrados e impedidos, 1–3 impostores, privacidade, reconexão e reenvio idempotente.

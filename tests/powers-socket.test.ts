@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import { PROTOCOL_VERSION } from '@impostor/shared';
 import { Client, until } from '../scripts/clients.js';
 process.env.NODE_ENV = 'test';
 const { createGameServer } = await import('../apps/server/src/index.js');
@@ -100,7 +101,7 @@ test('24 ativações simultâneas, anonimato, reconexão e repetição do mesmo 
       assert(!JSON.stringify(attacks).includes(`Rede ${(i + 23) % 24}`));
     }
     const health = await fetch(url + '/health').then((r) => r.json());
-    assert.equal(health.protocolVersion, 2);
+    assert.equal(health.protocolVersion, PROTOCOL_VERSION);
     assert.equal(health.metrics.connections, 26);
     assert(health.metrics.rssBytes > 0);
     assert.equal(health.metrics.commands, all.reduce((sum, c) => sum + c.latencies.length, 0) + 1);

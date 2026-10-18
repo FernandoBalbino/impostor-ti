@@ -30,3 +30,7 @@ Produzida com a ferramenta integrada de geração de imagens. Os arquivos finais
 O limite de 30 novas imagens do catálogo é respeitado. Os personagens e o laboratório são recursos próprios de cenário e identidade visual.
 
 O cenário e o atlas são servidos em WebP sem perdas. A conversão preservou todos os pixels visíveis e reduziu os dois arquivos de 3.067 KB para 2.496 KB (aproximadamente 19%). Os PNG originais permanecem versionados como fontes da arte. Os prompts completos estão em `IMAGE-PROMPTS.md`.
+
+# Vestígio do Invisível
+
+Sprite original gerado individualmente com a ferramenta integrada Image Gen, em modo de geração e com transparência. Original: `docs/power-sprites/vestige.png`. Recurso servido pelo Pages: `apps/web/public/assets/powers/vestige.webp`, 128×128, WebP lossless de 13.076 bytes. Predominância vermelha, olho e runa A para representar a primeira letra. Otimização com amostragem nearest e alfa preservado; o modal de votos reutiliza `Avatar`, fontes, ícones e componentes existentes, sem novas imagens de interface.

@@ -116,7 +116,7 @@ export function createGameServer(
     res.json({
       status: 'ok',
       service: 'impostor-ti',
-      version: '2.0.0',
+      version: '2.1.0',
       protocolVersion: PROTOCOL_VERSION,
       release: process.env.RENDER_GIT_COMMIT?.slice(0, 7) ?? 'local',
       rooms: engine.rooms.size,

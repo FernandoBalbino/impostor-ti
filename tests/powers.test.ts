@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import {
   PROTOCOL_VERSION,
+  ALL_POWER_IDS,
   POWER_IDS,
   type Command,
   type PowerId,
@@ -89,7 +90,11 @@ test('dois poderes distintos são obrigatórios e a escolha fica travada na part
   const room = engine.room(teacher.code);
   const p = engine.join(room.code, 'Aluno', 0, 's').auth;
   const send = (data: Record<string, unknown>) =>
-    engine.execute(p, { ...data, requestId: randomUUID(), protocolVersion: 2 } as Command);
+    engine.execute(p, {
+      ...data,
+      requestId: randomUUID(),
+      protocolVersion: PROTOCOL_VERSION,
+    } as Command);
   rejects(() => send({ type: 'player:ready', ready: true, avatar: 0 }), 'CHOOSE_POWERS');
   rejects(() => send({ type: 'player:powers', powers: ['oracle', 'oracle'] }), 'INVALID_POWERS');
   rejects(
@@ -190,7 +195,7 @@ for (const result of [0, 1])
         type: 'power:activate',
         powerId: 'oracle',
         targetId: s.players[0].playerId,
-        protocolVersion: 2,
+        protocolVersion: PROTOCOL_VERSION,
         requestId: id,
       }),
       first,
@@ -437,3 +442,76 @@ test('nova partida mantém escolhas e limpa efeitos, recargas e resultados priva
   assert.equal(state.usedPowerRound, 0);
 });
 test('catálogo tem dez poderes distintos', () => assert.equal(new Set(POWER_IDS).size, 10));
+
+test('vestígio é automático somente para os três impostores e não ocupa suas duas escolhas', async (t) => {
+  const s = await fixture(t, { impostors: 3 });
+  for (let i = 0; i < 8; i++) {
+    assert.equal(s.state(i).powers.length, 2);
+    assert.deepEqual(
+      s.state(i).exclusivePower,
+      i < 3 ? { id: 'vestige', readyRound: 0, used: false } : null,
+    );
+    assert.equal(s.state(i).vestigeLetter, null);
+  }
+  assert(!POWER_IDS.some((id: string) => id === 'vestige'));
+  assert.equal(ALL_POWER_IDS.length, 11);
+  rejects(() => s.cast(3, 'vestige'), 'IMPOSTOR_ONLY');
+});
+
+test('vestígio revela somente a primeira letra em segredo, preserva acentos e reenvio não cobra de novo', async (t) => {
+  const s = await fixture(t);
+  s.room.word = { ...s.room.word!, nome: 'Área de trabalho' };
+  const request = randomUUID();
+  const activation = s.cast(0, 'vestige', undefined, undefined, request);
+  assert.equal(s.state(0).vestigeLetter, 'Á');
+  assert.equal(s.state(0).word, null);
+  assert(activation.activation!.message.includes('Á'));
+  assert(!activation.activation!.message.includes('Área'));
+  assert.equal(s.state(1).vestigeLetter, null);
+  assert.deepEqual(s.state(1).notifications, []);
+  const publicData = JSON.stringify(s.engine.public(s.room));
+  for (const secret of ['vestige', 'exclusivePower', 'vestigeLetter', 'Área'])
+    assert(!publicData.includes(secret));
+  const token = s.room.players[0].token;
+  const resumed = s.engine.resume(s.room.code, token, 'new-socket');
+  assert.equal((s.engine.privateState(s.room, resumed) as PlayerState).vestigeLetter, 'Á');
+  assert.deepEqual(s.cast(0, 'vestige', undefined, undefined, request), activation);
+  assert.equal(s.state(0).notifications.length, 1);
+});
+
+test('vestígio compartilha o limite por rodada e volta na rodada 5 após uso na 1', async (t) => {
+  const s = await fixture(t);
+  s.cast(0, 'vestige');
+  assert.equal(s.state(0).exclusivePower!.readyRound, 5);
+  rejects(() => s.cast(0, 'refuge'), 'ONE_POWER_PER_ROUND');
+  await s.next();
+  rejects(() => s.cast(0, 'vestige'), 'POWER_COOLDOWN');
+  s.cast(0, 'refuge');
+  rejects(() => s.cast(0, 'vestige'), 'ONE_POWER_PER_ROUND');
+  await s.next();
+  rejects(() => s.cast(0, 'vestige'), 'POWER_COOLDOWN');
+  await s.next();
+  rejects(() => s.cast(0, 'vestige'), 'POWER_COOLDOWN');
+  await s.next();
+  s.cast(0, 'vestige');
+  assert.equal(s.state(0).exclusivePower!.readyRound, 9);
+});
+
+test('vestígio não funciona no lobby, nas revelações ou após eliminação; reset remove pista e poder exclusivo', async (t) => {
+  const s = await fixture(t);
+  s.room.phase = 'VOTE_RESULTS';
+  rejects(() => s.cast(0, 'vestige'), 'WRONG_PHASE');
+  s.room.phase = 'CLUES';
+  s.room.players[0].alive = false;
+  rejects(() => s.cast(0, 'vestige'), 'ELIMINATED');
+  s.room.players[0].alive = true;
+  s.cast(0, 'vestige');
+  s.send(s.teacher, { type: 'game:end' });
+  s.send(s.teacher, { type: 'game:reset' });
+  assert.equal(s.state(0).exclusivePower, null);
+  assert.equal(s.state(0).vestigeLetter, null);
+  rejects(
+    () => s.send(s.players[0], { type: 'player:powers', powers: ['vestige', 'refuge'] }),
+    'INVALID_POWERS',
+  );
+});

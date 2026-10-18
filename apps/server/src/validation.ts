@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CATEGORIES, POWER_IDS, PROTOCOL_VERSION } from '@impostor/shared';
+import { CATEGORIES, POWER_IDS, ALL_POWER_IDS, PROTOCOL_VERSION } from '@impostor/shared';
 const requestId = z.string().min(8).max(80);
 const base = { requestId, protocolVersion: z.literal(PROTOCOL_VERSION) };
 const code = z
@@ -37,7 +37,7 @@ export const CommandSchema = z.discriminatedUnion('type', [
   z
     .object({
       type: z.literal('power:activate'),
-      powerId: z.enum(POWER_IDS),
+      powerId: z.enum(ALL_POWER_IDS),
       targetId: z.string().min(1).max(40).optional(),
       text: z.string().max(500).optional(),
       ...base,

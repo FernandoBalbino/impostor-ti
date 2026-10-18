@@ -2,6 +2,7 @@ import { randomBytes, randomInt } from 'node:crypto';
 import {
   CATEGORIES,
   POWER_IDS,
+  IMPOSTOR_POWER_ID,
   POWERS,
   ACTIVE_POWER_PHASES,
   type PowerId,
@@ -45,6 +46,8 @@ type Player = PublicPlayer & {
   token: string;
   sockets: Set<string>;
   powers: PowerSlot[];
+  exclusivePower: PowerSlot | null;
+  vestigeLetter: string | null;
   effects: PlayerEffects;
   usedPowerRound: number;
   fakeClue: string | null;
@@ -253,6 +256,8 @@ export class GameEngine {
       voted: false,
       sockets: new Set([socketId]),
       powers: [],
+      exclusivePower: null,
+      vestigeLetter: null,
       effects: freshEffects(),
       usedPowerRound: 0,
       fakeClue: null,
@@ -358,6 +363,8 @@ export class GameEngine {
       word: role === 'civil' && room.word ? { ...room.word } : null,
       impostorIds: role === 'impostor' ? [...room.impostorIds] : [],
       powers: p.powers.map((s) => ({ ...s })),
+      exclusivePower: role === 'impostor' && p.exclusivePower ? { ...p.exclusivePower } : null,
+      vestigeLetter: role === 'impostor' ? p.vestigeLetter : null,
       usedPowerRound: p.usedPowerRound,
       effects: structuredClone(p.effects),
       clueSubmitted: p.clue !== null,
@@ -392,7 +399,7 @@ export class GameEngine {
         if (
           cmd.powers.length > 2 ||
           new Set(cmd.powers).size !== cmd.powers.length ||
-          cmd.powers.some((id) => !POWER_IDS.includes(id))
+          cmd.powers.some((id) => !POWER_IDS.some((available) => available === id))
         )
           fail('INVALID_POWERS', 'Escolha até dois poderes diferentes.');
         p.powers = cmd.powers.map((id) => ({ id, readyRound: 0, used: false }));
@@ -461,6 +468,12 @@ export class GameEngine {
         if (room.settings.selectionMode === 'random')
           for (let i = 0; i < room.settings.impostorCount; i++)
             room.impostorIds.push(poolIds.splice(randomInt(poolIds.length), 1)[0]);
+        for (const player of room.players) {
+          player.exclusivePower = room.impostorIds.includes(player.id)
+            ? { id: IMPOSTOR_POWER_ID, readyRound: 0, used: false }
+            : null;
+          player.vestigeLetter = null;
+        }
         const pool = CATALOG.filter(
           (w) => room.settings.categories.includes(w.categoria) && w.id !== room.previousWordId,
         );
@@ -576,6 +589,8 @@ export class GameEngine {
           p.fakeClue = null;
           p.rewriteUntil = 0;
           p.effects = freshEffects();
+          p.exclusivePower = null;
+          p.vestigeLetter = null;
           p.powers = p.powers.map((s) => ({ id: s.id, readyRound: 0, used: false }));
           p.usedPowerRound = 0;
           p.notifications = [];
@@ -770,7 +785,12 @@ export class GameEngine {
   private activatePower(room: Room, auth: Auth, cmd: Extract<Command, { type: 'power:activate' }>) {
     const actor = this.eligible(room, auth);
     const def = POWERS[cmd.powerId];
-    const slot = actor.powers.find((p) => p.id === cmd.powerId);
+    if (cmd.powerId === IMPOSTOR_POWER_ID && !room.impostorIds.includes(actor.id))
+      fail('IMPOSTOR_ONLY', 'Vestígio do Invisível é exclusivo dos impostores.');
+    const slot =
+      cmd.powerId === IMPOSTOR_POWER_ID
+        ? actor.exclusivePower
+        : actor.powers.find((p) => p.id === cmd.powerId);
     if (!def || !slot) fail('POWER_NOT_SELECTED', 'Este poder não foi escolhido para a partida.');
     this.requirePhase(room, ...ACTIVE_POWER_PHASES);
     if (
@@ -871,6 +891,12 @@ export class GameEngine {
     let targetMessage = '';
     let tone: PowerNotice['tone'] = 'success';
     switch (cmd.powerId) {
+      case 'vestige':
+        actor.vestigeLetter = Array.from(room.word!.nome)
+          .find((char) => /\p{L}/u.test(char))!
+          .toLocaleUpperCase('pt-BR');
+        message = `A primeira letra da palavra é ${actor.vestigeLetter}. Só você recebeu esta pista.`;
+        break;
       case 'silence':
         e.silencedUntil = now + effectMs;
         if (to.rewriteUntil > now)

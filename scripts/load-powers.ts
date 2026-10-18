@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { POWER_IDS, type PowerId, type PrivateState, type Ack } from '@impostor/shared';
+import {
+  POWER_IDS,
+  PROTOCOL_VERSION,
+  type PowerId,
+  type PrivateState,
+  type Ack,
+} from '@impostor/shared';
 import { Client, pause, until } from './clients.js';
 
 const url = process.env.TEST_URL ?? 'http://localhost:3001';
@@ -64,7 +70,7 @@ const metrics = async () => {
   const response = await fetch(url + '/health', { signal: AbortSignal.timeout(10000) });
   assert(response.ok);
   const h = await response.json();
-  assert.equal(h.protocolVersion, 2);
+  assert.equal(h.protocolVersion, PROTOCOL_VERSION);
   healthSamples.push({ at: new Date().toISOString(), ...h.metrics });
 };
 const checkpoint = () => {

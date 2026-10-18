@@ -6,7 +6,7 @@ export const CATEGORIES = [
   'Conceitos básicos',
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
-export const PROTOCOL_VERSION = 2 as const;
+export const PROTOCOL_VERSION = 3 as const;
 export const POWER_IDS = [
   'silence',
   'letter',
@@ -19,7 +19,9 @@ export const POWER_IDS = [
   'erase',
   'veil',
 ] as const;
-export type PowerId = (typeof POWER_IDS)[number];
+export const IMPOSTOR_POWER_ID = 'vestige' as const;
+export const ALL_POWER_IDS = [...POWER_IDS, IMPOSTOR_POWER_ID] as const;
+export type PowerId = (typeof ALL_POWER_IDS)[number];
 export const POWERS: Record<
   PowerId,
   {
@@ -28,6 +30,7 @@ export const POWERS: Record<
     target: 'other' | 'self' | 'any';
     window: 'clues' | 'active';
     once?: boolean;
+    exclusive?: 'impostor';
   }
 > = {
   silence: {
@@ -99,6 +102,14 @@ export const POWERS: Record<
       'Esconde a imagem do item de outro jogador na próxima rodada. O nome da palavra continua visível.',
     target: 'other',
     window: 'active',
+  },
+  vestige: {
+    name: 'Vestígio do Invisível',
+    description:
+      'Revela em segredo somente a primeira letra da palavra. Poder automático e exclusivo do impostor.',
+    target: 'self',
+    window: 'active',
+    exclusive: 'impostor',
   },
 };
 export const ACTIVE_POWER_PHASES: Phase[] = ['CLUES', 'WAITING_FOR_VOTE', 'VOTING', 'TIEBREAK'];
@@ -207,6 +218,8 @@ export type PrivateState =
       word: WordCard | null;
       impostorIds: string[];
       powers: PowerSlot[];
+      exclusivePower: PowerSlot | null;
+      vestigeLetter: string | null;
       usedPowerRound: number;
       effects: PlayerEffects;
       clueSubmitted: boolean;

@@ -22,6 +22,7 @@ function Tooltip({ id, children }: { id: PowerId; children?: ReactNode }) {
   return (
     <span className="power-tooltip" role="tooltip">
       <strong>{p.name}</strong>
+      {p.exclusive && <b className="exclusive-label">Exclusivo do impostor · automático</b>}
       <span>{p.description}</span>
       <small>
         {p.window === 'clues' ? 'Durante o prazo normal das dicas' : 'Dicas, conversa e votação'} ·{' '}
@@ -134,11 +135,17 @@ export function PowerTray({ now }: { now: number }) {
   const state = privateState;
   const me = room.players.find((p) => p.id === state.playerId);
   if (!me?.alive || me.spectator) return null;
-  const slot = state.powers.find((p) => p.id === selected);
+  const slots = [
+    ...state.powers,
+    ...(state.role === 'impostor' && state.exclusivePower ? [state.exclusivePower] : []),
+  ];
+  const slot = slots.find((p) => p.id === selected);
   const reason = slot ? unavailable(room, slot, state.usedPowerRound, connected, now) : '';
   const def = selected ? POWERS[selected] : null;
   const effects = state.effects;
   const notices: string[] = [];
+  if (state.role === 'impostor' && state.vestigeLetter)
+    notices.push(`Vestígio do Invisível · primeira letra: ${state.vestigeLetter}`);
   if (effects.silencedUntil > now && room.phase === 'CLUES')
     notices.push(`Silenciado · ${Math.ceil((effects.silencedUntil - now) / 1000)}s`);
   if (effects.forbiddenLetter) notices.push(`Próxima dica: sem ${effects.forbiddenLetter}`);
@@ -165,7 +172,7 @@ export function PowerTray({ now }: { now: number }) {
           <LightningIcon weight="fill" /> SEUS PODERES
         </span>
         <div className="equipped-powers">
-          {state.powers.map((p) => {
+          {slots.map((p) => {
             const why = unavailable(room, p, state.usedPowerRound, connected, now);
             const spent = !!POWERS[p.id].once && p.used;
             const count = Math.max(0, p.readyRound - room.round);
@@ -174,7 +181,7 @@ export function PowerTray({ now }: { now: number }) {
               <div className="power-option-wrap" key={p.id}>
                 <button
                   type="button"
-                  className={`power-icon ${why ? 'unavailable' : 'available'} ${recent?.powerId === p.id ? 'power-flash' : ''}`}
+                  className={`power-icon ${POWERS[p.id].exclusive ? 'exclusive-power' : ''} ${why ? 'unavailable' : 'available'} ${recent?.powerId === p.id ? 'power-flash' : ''}`}
                   key={`${p.id}-${recent?.id ?? 0}`}
                   aria-label={`${POWERS[p.id].name}${why ? ', indisponível' : ', disponível'}`}
                   aria-disabled={!!why}
@@ -186,6 +193,11 @@ export function PowerTray({ now }: { now: number }) {
                   }}
                 >
                   <PowerIcon id={p.id} />
+                  {POWERS[p.id].exclusive && (
+                    <span className="power-exclusive-mark" aria-hidden="true">
+                      I
+                    </span>
+                  )}
                   {spent ? (
                     <span className="power-counter spent">Usado</span>
                   ) : count > 0 ? (
@@ -215,6 +227,11 @@ export function PowerTray({ now }: { now: number }) {
             <PowerIcon id={selected} />
           </div>
           <p>{def.description}</p>
+          {def.exclusive && (
+            <p className="exclusive-label">
+              Recebido automaticamente por ser impostor. A pista é privada.
+            </p>
+          )}
           <p className="subtle">
             {def.once
               ? 'Uma ativação nesta partida.'

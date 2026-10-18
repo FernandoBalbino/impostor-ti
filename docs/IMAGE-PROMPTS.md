@@ -34,15 +34,21 @@ Generate exactly ONE original videogame ability icon sprite, not a sheet or mock
 
 ### Assuntos
 
-| Arquivo | Assunto enviado ao Image Gen |
-|---|---|
-| `silence` | A small theatrical ivory mask with its mouth sealed by a crimson X ribbon. Crimson and warm ivory highlights. |
-| `letter` | One bold rune shaped like the capital letter A, cracked in half, with violet crystal shards. Purple and lavender highlights. Only the single letter A, no other text. |
-| `aegis` | A stout golden shield with a bright sapphire blue crystal at its center. Golden and blue highlights. |
-| `double_vote` | A symmetrical golden balance scale bearing two small glowing golden orbs, conveying two votes. Gold and amber highlights. |
-| `ban_vote` | A red wax voting seal, dramatically split in two, with a dark ballot silhouette. Crimson and orange highlights. |
-| `oracle` | A luminous watchful eye enclosed inside a faceted purple crystal. Violet and magenta highlights. |
-| `echo` | Two overlapping cream speech bubbles, one cyan and one violet, with three pixel dots in each, conveying a false echo. Cyan and purple highlights. |
-| `refuge` | A circular turquoise magical barrier enclosing a tiny glowing diamond. Teal, mint and cyan highlights. |
-| `erase` | A small rolled ivory parchment with a broad magical white eraser stroke across its dark writing, and a few white pixel sparks. Ivory, silver and blue highlights. |
-| `veil` | A watchful golden eye partly covered by a folded midnight blue veil. Navy blue, indigo and gold highlights. |
+| Arquivo       | Assunto enviado ao Image Gen                                                                                                                                          |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `silence`     | A small theatrical ivory mask with its mouth sealed by a crimson X ribbon. Crimson and warm ivory highlights.                                                         |
+| `letter`      | One bold rune shaped like the capital letter A, cracked in half, with violet crystal shards. Purple and lavender highlights. Only the single letter A, no other text. |
+| `aegis`       | A stout golden shield with a bright sapphire blue crystal at its center. Golden and blue highlights.                                                                  |
+| `double_vote` | A symmetrical golden balance scale bearing two small glowing golden orbs, conveying two votes. Gold and amber highlights.                                             |
+| `ban_vote`    | A red wax voting seal, dramatically split in two, with a dark ballot silhouette. Crimson and orange highlights.                                                       |
+| `oracle`      | A luminous watchful eye enclosed inside a faceted purple crystal. Violet and magenta highlights.                                                                      |
+| `echo`        | Two overlapping cream speech bubbles, one cyan and one violet, with three pixel dots in each, conveying a false echo. Cyan and purple highlights.                     |
+| `refuge`      | A circular turquoise magical barrier enclosing a tiny glowing diamond. Teal, mint and cyan highlights.                                                                |
+| `erase`       | A small rolled ivory parchment with a broad magical white eraser stroke across its dark writing, and a few white pixel sparks. Ivory, silver and blue highlights.     |
+| `veil`        | A watchful golden eye partly covered by a folded midnight blue veil. Navy blue, indigo and gold highlights.                                                           |
+
+# Vestígio do Invisível — sprite vermelho exclusivo
+
+Ferramenta integrada **Image Gen**, modo de geração, `transparent_background: true`. Original salvo em `docs/power-sprites/vestige.png`; versão otimizada em `apps/web/public/assets/powers/vestige.webp`.
+
+Generate exactly ONE original videogame ability icon sprite, not a sheet or mockup. Clean crisp 16-bit pixel art matching a cozy classroom social deduction browser game with navy outlines, golden UI frames, parchment cards and Pixelify typography. True visible square pixels, dark navy 2-pixel contour, bold recognizable silhouette readable at 40x40. A single compact object centered on a square transparent canvas, occupies 80% of the canvas, equal transparent margin on every side. Flat front-facing collectible RPG icon with a few carefully placed pixel sparkles. No background, no frame, no gradients, no blur. Subject: a mysterious watchful CRIMSON RED eye cradled by two small angular ruby crystal shards. Its pupil is a single tiny luminous capital letter A, symbolizing discovering only the first letter of a secret word. Predominantly red: crimson, scarlet and ruby red highlights, very small amber highlight on the A, deep burgundy shadows and dark navy contour. Friendly magical retro game ability, no gore, no violence, no extra text. Genuine transparent alpha background.

@@ -602,99 +602,22 @@ strong {
   overflow: hidden;
   padding: 0 24px;
 }
-.game-header {
+.room-tools {
   display: flex;
   align-items: center;
-  gap: 14px;
-  flex-shrink: 0;
-  min-height: 75px;
-  width: 100%;
-  max-width: 1500px;
-  margin: 0 auto;
-  padding: 8px 2px;
-}
-.header-subtitle {
-  font-size: 0.7rem;
-  color: #c1d2ed;
-  line-height: 1.35;
-  max-width: 170px;
-  border-left: 1px solid #3b5c87;
-  padding-left: 14px;
-}
-.header-room {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid #315786;
-  background: #09162ed9;
-  border-radius: 7px;
-  padding: 8px 12px;
-}
-.header-room > span {
-  font-size: 0.6rem;
-  font-weight: 900;
-  letter-spacing: 0.14em;
-  color: #94acd0;
-}
-.header-room strong {
-  font-family: Pixelify;
-  font-size: 24px;
-  color: #ffd45a;
-  letter-spacing: 0.1em;
-}
-.teacher-status {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  padding: 5px 14px 5px 6px;
-  background: #08162dec;
-  border: 2px solid #2a5089;
-  border-radius: 12px;
-  min-width: 215px;
-}
-.teacher-status .avatar {
-  width: 33px;
-  height: 40px;
-}
-.teacher-status > div {
-  display: flex;
-  flex-direction: column;
-}
-.teacher-status strong {
-  color: #2ce5a7;
-  font-size: 0.77rem;
-  display: flex;
+  justify-content: flex-end;
   gap: 6px;
-  align-items: center;
-}
-.teacher-status span {
-  font-size: 0.65rem;
-  color: #a9c0e2;
-  margin-top: 3px;
-}
-.game-footer {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: center;
-  min-height: 26px;
   flex-shrink: 0;
-  max-width: 1500px;
+  min-height: 44px;
   width: 100%;
+  max-width: 1500px;
   margin: 0 auto;
-  font-size: 0.53rem;
-  letter-spacing: 0.1em;
-  color: #a5b7d4;
+  padding: 4px 0;
 }
-.game-footer > span:first-child {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-.game-footer .tiny-dot {
-  height: 5px;
-  width: 5px;
+.room-tools > .icon-button {
+  min-width: 36px;
+  min-height: 36px;
+  padding: 6px;
 }
 .lobby-layout {
   display: grid;
@@ -932,13 +855,21 @@ strong {
   padding-bottom: 6px;
 }
 .game-meta {
-  height: 31px;
+  position: relative;
+  height: 44px;
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 18px;
   flex-shrink: 0;
   margin-bottom: 5px;
+  padding: 0 84px;
+}
+.game-meta .room-tools {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: auto;
 }
 .game-meta .pill {
   font-size: 0.63rem;
@@ -1760,9 +1691,6 @@ strong {
   .app-shell.in-room {
     padding: 0 4vw;
   }
-  .game-header {
-    min-height: 90px;
-  }
   .player-column {
     gap: 6px;
   }
@@ -1813,9 +1741,6 @@ strong {
   .clue-form > .primary {
     min-height: 53px;
   }
-  .game-meta {
-    height: 34px;
-  }
 }
 @media (max-width: 1150px) {
   .home-layout {
@@ -1841,9 +1766,6 @@ strong {
   }
   .lobby-roster {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .header-subtitle {
-    display: none;
   }
   .lobby-heading h1 {
     font-size: 29px;
@@ -1885,9 +1807,6 @@ strong {
   }
   .secret-card {
     width: 94%;
-  }
-  .teacher-status {
-    min-width: 200px;
   }
 }
 @media (max-width: 850px) {
@@ -1947,60 +1866,6 @@ strong {
     min-height: 100dvh;
     overflow: visible;
     padding: 0 12px;
-  }
-  .game-header {
-    gap: 8px;
-    flex-wrap: wrap;
-    min-height: 85px;
-    padding: 10px 0;
-  }
-  .game-header .brand-name {
-    font-size: 31px;
-  }
-  .game-header .brand-character {
-    top: -17px;
-  }
-  .header-room {
-    padding: 5px 9px;
-  }
-  .header-room strong {
-    font-size: 20px;
-  }
-  .teacher-status {
-    min-width: 0;
-    padding: 4px 7px;
-    flex: 1;
-    order: 6;
-    flex-basis: 100%;
-  }
-  .teacher-status .avatar {
-    width: 23px;
-    height: 29px;
-  }
-  .teacher-status > div {
-    flex-direction: row;
-    align-items: center;
-    gap: 10px;
-  }
-  .teacher-status strong {
-    font-size: 0.65rem;
-  }
-  .teacher-status span {
-    font-size: 0.61rem;
-    margin: 0;
-  }
-  .game-header > .icon-button {
-    min-width: 28px;
-    min-height: 28px;
-    padding: 4px;
-    font-size: 14px;
-  }
-  .game-footer {
-    flex-wrap: wrap;
-    justify-content: center;
-    padding: 12px 0;
-    gap: 5px;
-    font-size: 0.46rem;
   }
   .game-board {
     padding-top: 8px;
@@ -2074,6 +1939,8 @@ strong {
   }
   .game-meta {
     margin: 3px 0 10px;
+    gap: 10px;
+    padding-left: 0;
   }
   .lobby-layout {
     display: flex;
@@ -2209,24 +2076,6 @@ strong {
   }
   .lobby-roster {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .game-header .brand-name {
-    font-size: 28px;
-  }
-  .header-room {
-    padding: 5px;
-  }
-  .header-room strong {
-    font-size: 18px;
-  }
-  .header-room > span {
-    display: none;
-  }
-  .teacher-status span {
-    font-size: 0.54rem;
-  }
-  .teacher-status strong {
-    font-size: 0.59rem;
   }
   .speech-bubble {
     font-size: 10px;

@@ -1,4 +1,4 @@
-import { memo, useEffect, useState, type FormEvent } from 'react';
+import { memo, useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { useGame } from '../connection';
 import {
   PHASE_LABELS,
@@ -362,7 +362,7 @@ function TeacherControls() {
     </div>
   );
 }
-export function GameBoard() {
+export function GameBoard({ tools }: { tools: ReactNode }) {
   const { room, privateState, send, busy, connected, offset } = useGame();
   const state = room!;
   const [now, setNow] = useState(Date.now());
@@ -448,6 +448,7 @@ export function GameBoard() {
         <button className="ghost" onClick={() => setHistory(true)}>
           <ClockCounterClockwiseIcon /> Histórico
         </button>
+        {tools}
       </div>
       <div className="board-layout">
         <section className="player-column left-column" aria-label="Participantes da esquerda">

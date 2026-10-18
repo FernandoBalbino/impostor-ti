@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useGame } from './connection';
-import { Avatar, Brand, HowTo } from './components/ui';
+import { Avatar, HowTo } from './components/ui';
 import { Home } from './pages/Home';
 import { Lobby } from './pages/Lobby';
 import { GameBoard } from './pages/Board';
@@ -14,7 +14,7 @@ import {
   XIcon,
 } from '@phosphor-icons/react';
 export function App() {
-  const { room, privateState, error, clearError, connected, recovering, leave } = useGame();
+  const { room, error, clearError, connected, recovering, leave } = useGame();
   const navigate = useNavigate();
   const route = useLocation();
   const [help, setHelp] = useState(false);
@@ -30,61 +30,36 @@ export function App() {
     leave();
     navigate('/');
   };
+  const roomTools = (
+    <nav className="room-tools" aria-label="Opções da sala">
+      <button className="icon-button" aria-label="Como jogar" onClick={() => setHelp(true)}>
+        <InfoIcon />
+      </button>
+      {isDisplay ? (
+        <button
+          className="icon-button"
+          aria-label="Tela cheia"
+          onClick={() => {
+            if (document.fullscreenElement) void document.exitFullscreen();
+            else void document.documentElement.requestFullscreen();
+          }}
+        >
+          <ArrowsOutIcon />
+        </button>
+      ) : (
+        <button className="icon-button" aria-label="Sair da sala" onClick={exit}>
+          <DoorOpenIcon />
+        </button>
+      )}
+    </nav>
+  );
   return (
     <div className={`app-shell ${room ? 'in-room' : ''} ${isDisplay ? 'display-mode' : ''}`}>
       <div className="scene" />
       <div className="scene-shade" />
       {room ? (
         <>
-          <header className="game-header">
-            <Brand />
-            <span className="header-subtitle">
-              Jogo de dedução social
-              <br />
-              para a sala de aula
-            </span>
-            <div className="header-room">
-              <span>SALA</span>
-              <strong>{room.code}</strong>
-            </div>
-            <div className="teacher-status">
-              <Avatar index={8} />
-              <div>
-                <strong>
-                  <i className={`status-dot ${room.teacherOnline ? 'online' : ''}`} />
-                  {room.teacherOnline ? 'Professor conectado' : 'Professor desconectado'}
-                </strong>
-                <span>
-                  {room.phase === 'LOBBY'
-                    ? 'Preparando a investigação'
-                    : room.phase === 'CLUES'
-                      ? 'Aguardando as dicas da turma'
-                      : room.phase === 'VOTING'
-                        ? 'Acompanhando os votos secretos'
-                        : 'No controle da investigação'}
-                </span>
-              </div>
-            </div>
-            <button className="icon-button" aria-label="Como jogar" onClick={() => setHelp(true)}>
-              <InfoIcon />
-            </button>
-            {isDisplay ? (
-              <button
-                className="icon-button"
-                aria-label="Tela cheia"
-                onClick={() => {
-                  if (document.fullscreenElement) void document.exitFullscreen();
-                  else void document.documentElement.requestFullscreen();
-                }}
-              >
-                <ArrowsOutIcon />
-              </button>
-            ) : (
-              <button className="icon-button" aria-label="Sair da sala" onClick={exit}>
-                <DoorOpenIcon />
-              </button>
-            )}
-          </header>
+          {room.phase === 'LOBBY' && roomTools}
           {(!connected || recovering) && (
             <div className="reconnect-banner" role="status">
               <WifiHighIcon /> Reconectando… sua vaga e suas respostas serão preservadas.
@@ -112,19 +87,8 @@ export function App() {
               <Lobby />
             )
           ) : (
-            <GameBoard />
+            <GameBoard tools={roomTools} />
           )}
-          <footer className="game-footer">
-            <span>
-              <span className="tiny-dot" />
-              {privateState?.kind === 'teacher'
-                ? 'PAINEL PRIVADO DO PROFESSOR'
-                : isDisplay
-                  ? 'TELÃO PÚBLICO · SEM SEGREDOS EXPOSTOS'
-                  : 'SUA IDENTIDADE É SECRETA. SUAS PISTAS, NEM TANTO.'}
-            </span>
-            <span>IMPOSTOR TI · RESPEITO FAZ PARTE DO JOGO</span>
-          </footer>
         </>
       ) : isDisplay ? (
         <main className="loading-display panel">

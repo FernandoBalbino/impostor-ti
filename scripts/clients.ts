@@ -27,6 +27,10 @@ export class Client {
   latencies: number[] = [];
   disconnects = 0;
   packets: unknown[] = [];
+  serverTimeOffset = 0;
+  get serverNow() {
+    return Date.now() + this.serverTimeOffset;
+  }
   constructor(url: string, origin?: string) {
     this.socket = io(url, {
       autoConnect: false,
@@ -38,6 +42,7 @@ export class Client {
     });
     this.socket.on('update', (u) => {
       this.updates++;
+      this.serverTimeOffset = u.serverTime - Date.now();
       if (this.room && u.revision > this.room.revision)
         this.room = { ...this.room, ...u.changes, revision: u.revision };
     });
@@ -58,16 +63,15 @@ export class Client {
   }
   async raw(data: Record<string, unknown>): Promise<Ack> {
     const start = performance.now();
-    const result: Ack = await this.socket
-      .timeout(15000)
-      .emitWithAck('command', {
-        protocolVersion: PROTOCOL_VERSION,
-        ...data,
-        requestId: data.requestId ?? randomUUID(),
-      } as Command);
+    const result: Ack = await this.socket.timeout(15000).emitWithAck('command', {
+      protocolVersion: PROTOCOL_VERSION,
+      ...data,
+      requestId: data.requestId ?? randomUUID(),
+    } as Command);
     this.latencies.push(performance.now() - start);
     if (result.ok) {
       if (result.snapshot) {
+        this.serverTimeOffset = result.snapshot.serverTime - Date.now();
         this.room = result.snapshot.room;
         this.privateState = result.snapshot.privateState;
       }

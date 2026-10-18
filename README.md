@@ -9,7 +9,7 @@ Um laboratório, uma palavra secreta, dez poderes e **um a três impostores**. J
 
 ![Impostor TI com 24 participantes simulados e seus nomes](docs/preview.png)
 
-**Validação da versão com poderes:** 63 testes aprovados e fluxo completo conferido em computador e celular. A nova sessão pública de 30 minutos será registrada em [docs/VALIDATION.md](docs/VALIDATION.md) após sua conclusão.
+**Validação da versão com poderes:** 63 testes aprovados, telas conferidas em computador e celular e sessão pública de **30 minutos e 6 segundos** com 24 alunos simulados, professor e telão. Foram 33 partidas, 15.312 comandos e nenhuma falha detectada; latência p95 de **173 ms**. Resultados e limites em [docs/VALIDATION.md](docs/VALIDATION.md).
 
 ## Como jogar
 

@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "url": "http://localhost:5173/impostor-ti/",
+  "checkedAt": "2026-10-18T13:32:57.314Z",
+  "checks": [
+    "queued-notice-restored-after-refresh",
+    "displayed-notice-not-repeated",
+    "single-copy-per-notice",
+    "touch-opens-details-and-cancel-consumes-nothing",
+    "keyboard-tooltip-and-confirmation",
+    "reduced-motion-disables-animation"
+  ]
+}

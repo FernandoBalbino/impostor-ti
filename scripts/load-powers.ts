@@ -8,6 +8,7 @@ const url = process.env.TEST_URL ?? 'http://localhost:3001';
 const minutes = Number(process.env.LOAD_MINUTES ?? 30);
 const duration = minutes * 60_000;
 const output = process.env.LOAD_REPORT ?? 'qa-evidence/powers/load-report.json';
+const profileOffset = Number(process.env.LOAD_PROFILE_OFFSET ?? 0);
 const profiles: [PowerId, PowerId][] = [
   ['refuge', 'oracle'],
   ['oracle', 'veil'],
@@ -45,10 +46,20 @@ const report: Record<string, unknown> = {
   requestedMinutes: minutes,
   students: 24,
   connections: 26,
+  profileOffset,
   completed: false,
   errors: failures,
 };
-const phase = (p: string) => until(() => clients.every((c) => c.room?.phase === p), 20000);
+const phase = async (p: string) => {
+  await until(() => clients.every((c) => c.room?.phase === p), 20000);
+  if (p === 'CLUES')
+    await until(() =>
+      students.every((c) => {
+        const own = state(c);
+        return !own.clueSubmitted && own.clueDeadline === teacher.room!.clueDeadline;
+      }),
+    );
+};
 const metrics = async () => {
   const response = await fetch(url + '/health', { signal: AbortSignal.timeout(10000) });
   assert(response.ok);
@@ -159,21 +170,37 @@ async function activateBurst(power: PowerId) {
     'impostorIds',
   ])
     assert(!pub.includes('"' + secret + '"'));
-  if (power === 'erase') await teacher.send({ type: 'clues:close' });
+  if (power === 'erase') {
+    const normalDeadline = teacher.room!.clueDeadline;
+    await teacher.send({ type: 'clues:close' });
+    // The public delta is batched; wait for it and the preceding private deadlines.
+    await until(() => clients.every((c) => c.room!.clueDeadline !== normalDeadline));
+  }
 }
 async function collectClues() {
-  const silencedUntil = Math.max(...students.map((c) => state(c).effects.silencedUntil));
-  if (silencedUntil > Date.now()) await pause(silencedUntil - Date.now() + 60);
+  const silenceRemaining = Math.max(
+    ...students.map((c) => state(c).effects.silencedUntil - c.serverNow),
+  );
+  if (silenceRemaining > 0) await pause(silenceRemaining + 60);
   await Promise.all(
     students.map(async (c, i) => {
       const p = state(c);
       const participant = c.room!.players.find((player) => player.id === p.playerId);
       if (!participant?.alive || participant.spectator) return;
-      if (p.clueSubmitted || !p.clueDeadline || p.clueDeadline <= Date.now()) return;
+      if (p.clueSubmitted || !p.clueDeadline || p.clueDeadline <= c.serverNow) return;
+      if (
+        teacher.room!.deadline !== teacher.room!.clueDeadline &&
+        p.clueDeadline === teacher.room!.clueDeadline
+      )
+        return;
       await c.send({ type: 'clue:submit', text: validClue(c, i) });
     }),
   );
-  if (teacher.room!.phase === 'CLUES') await teacher.send({ type: 'clues:close' });
+  if (teacher.room!.phase === 'CLUES') {
+    const closed = await teacher.raw({ type: 'clues:close' });
+    // The final clue can advance the server before its broadcast reaches the teacher.
+    assert(closed.ok || closed.code === 'WRONG_PHASE', JSON.stringify(closed));
+  }
   await phase('WAITING_FOR_VOTE');
 }
 async function castVotes(target: string | null) {
@@ -244,7 +271,7 @@ try {
       await teacher.send({ type: 'game:reset' });
       await phase('LOBBY');
     }
-    const profile = profiles[games % profiles.length];
+    const profile = profiles[(games + profileOffset) % profiles.length];
     await Promise.all(students.map((c) => c.send({ type: 'player:powers', powers: profile })));
     await Promise.all(
       students.map((c, i) => c.send({ type: 'player:ready', ready: true, avatar: i })),

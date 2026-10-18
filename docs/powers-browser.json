@@ -1,0 +1,115 @@
+{
+  "base": "https://fernandobalbino.github.io/impostor-ti/",
+  "api": "https://impostor-ti-api.onrender.com",
+  "checkedAt": "2026-10-18T13:29:23.747Z",
+  "layouts": [
+    {
+      "label": "lobby-aluno",
+      "width": 1366,
+      "height": 768,
+      "overflow": false,
+      "removed": 0,
+      "broken": []
+    },
+    {
+      "label": "lobby-aluno",
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "removed": 0,
+      "broken": []
+    },
+    {
+      "label": "impostor",
+      "width": 1366,
+      "height": 768,
+      "overflow": false,
+      "removed": 0,
+      "broken": [],
+      "form": 748,
+      "item": 362.859375
+    },
+    {
+      "label": "impostor",
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "removed": 0,
+      "broken": [],
+      "form": 727.9375,
+      "item": 330
+    },
+    {
+      "label": "civil",
+      "width": 1366,
+      "height": 768,
+      "overflow": false,
+      "removed": 0,
+      "broken": [],
+      "form": 748,
+      "item": 362.859375
+    },
+    {
+      "label": "civil",
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "removed": 0,
+      "broken": [],
+      "form": 727.9375,
+      "item": 330
+    },
+    {
+      "label": "telao",
+      "width": 1366,
+      "height": 768,
+      "overflow": false,
+      "removed": 0,
+      "broken": [],
+      "item": 446.28125
+    },
+    {
+      "label": "telao",
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "removed": 0,
+      "broken": [],
+      "item": 330
+    },
+    {
+      "label": "imagem-oculta",
+      "width": 1366,
+      "height": 768,
+      "overflow": false,
+      "removed": 0,
+      "broken": [],
+      "form": 748,
+      "item": 331.859375
+    },
+    {
+      "label": "imagem-oculta",
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "removed": 0,
+      "broken": [],
+      "form": 758.9375,
+      "item": 330
+    }
+  ],
+  "passed": [
+    "two-powers-picker-and-ready",
+    "three-impostors-and-private-allies",
+    "all-ten-powers-through-ui",
+    "silence-preserves-draft",
+    "echo-replaced-by-real-clue",
+    "erase-reopens-writing",
+    "vote-ban-and-double-vote",
+    "shield-prevents-elimination",
+    "veil-next-round-keeps-word",
+    "civil-victory-after-all-impostors",
+    "reset-keeps-loadout"
+  ],
+  "errors": []
+}

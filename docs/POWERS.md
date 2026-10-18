@@ -4,18 +4,18 @@ Cada aluno escolhe dois poderes diferentes abaixo dos personagens, antes de fica
 
 É possível ativar apenas um poder por rodada, incluindo os desempates. Cada poder tem sua própria recarga: se usado na rodada 1, volta na 5. Uma tentativa absorvida por barreira ou uma leitura fracassada também gasta a ativação. Cancelamentos, alvos inválidos e efeitos já ativos não gastam o poder.
 
-| Poder | Efeito |
-| --- | --- |
-| Silêncio do Inocente | Bloqueia a escrita e o envio de outro aluno por 20 segundos, preservando o rascunho. |
-| Letra do Abismo | Sorteia uma letra de A–Z proibida na próxima dica verdadeira; variações acentuadas também contam. |
-| Égide do Destino | Protege você ou um colega da próxima eliminação. O escudo quebra e ninguém é eliminado. Uma ativação por partida. |
-| Peso da Verdade | Seu voto vale dois nesta rodada, incluindo os desempates. Ative antes de confirmar o voto. |
-| Exílio do Veredito | Outro aluno fica sem votar nesta rodada e nos desempates. Não apaga votos já confirmados. |
-| Oráculo da Dúvida | Tem 50% de chance de revelar em segredo o papel verdadeiro de outro aluno. Falhar também consome a tentativa. |
-| Eco Apócrifo | Coloca uma dica falsa no nome de quem ainda não respondeu. A dica verdadeira substitui a falsa. |
-| Refúgio Estoico | Protege você do próximo poder hostil. Permanece até absorver um ataque e não bloqueia a Égide. |
-| Tábula Rasa | Apaga uma dica verdadeira e abre 20 segundos de reenvio somente para o alvo. |
-| Véu de Platão | Esconde somente a imagem do item de outro aluno na próxima rodada, mantendo o nome da palavra. |
+| Poder                | Efeito                                                                                                            |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Silêncio do Inocente | Bloqueia a escrita e o envio de outro aluno por 20 segundos, preservando o rascunho.                              |
+| Letra do Abismo      | Sorteia uma letra de A–Z proibida na próxima dica verdadeira; variações acentuadas também contam.                 |
+| Égide do Destino     | Protege você ou um colega da próxima eliminação. O escudo quebra e ninguém é eliminado. Uma ativação por partida. |
+| Peso da Verdade      | Seu voto vale dois nesta rodada, incluindo os desempates. Ative antes de confirmar o voto.                        |
+| Exílio do Veredito   | Outro aluno fica sem votar nesta rodada e nos desempates. Não apaga votos já confirmados.                         |
+| Oráculo da Dúvida    | Tem 50% de chance de revelar em segredo o papel verdadeiro de outro aluno. Falhar também consome a tentativa.     |
+| Eco Apócrifo         | Coloca uma dica falsa no nome de quem ainda não respondeu. A dica verdadeira substitui a falsa.                   |
+| Refúgio Estoico      | Protege você do próximo poder hostil. Permanece até absorver um ataque e não bloqueia a Égide.                    |
+| Tábula Rasa          | Apaga uma dica verdadeira e abre 20 segundos de reenvio somente para o alvo.                                      |
+| Véu de Platão        | Esconde somente a imagem do item de outro aluno na próxima rodada, mantendo o nome da palavra.                    |
 
 Silêncio, Letra, Eco e Tábula Rasa só podem ser ativados durante o prazo normal das dicas. Os demais funcionam nas etapas de dicas, conversa, votação e preparação do desempate, respeitando as ações que já aconteceram. Revelação de papéis, contagem encerrada e fim de jogo não aceitam ativações.
 
@@ -53,5 +53,7 @@ npm run test:load:powers
 ```
 
 O script mantém 24 alunos, professor e telão, alterna os dez poderes e 1–3 impostores, repete comandos e reconexões e verifica resultados de votos. Inclui rajadas de 24 ativações, conflitos pelo mesmo alvo, recargas e proteções. A aprovação exige sessão concluída, ausência de quedas inesperadas, p95 de confirmação até 1,5 segundo e máxima até 5 segundos. Os resultados desta versão são registrados em [VALIDATION.md](VALIDATION.md).
+
+Os prazos do simulador usam o horário recebido do servidor, assim como a interface. `LOAD_PROFILE_OFFSET` permite mudar a ordem dos pares testados; a sessão pública registrada começou com `3` (Eco/Tábula) e percorreu os dez poderes. A execução completa durou 30 min e 6 s, concluiu 33 partidas sem falhas detectadas e confirmou comandos com p95 de 173 ms.
 
 O Render atual continua com uma instância e salas em memória. A recuperação cobre quedas breves da conexão, enquanto o processo existe. Reinício ou deploy do backend encerra as salas; a validação com clientes simulados não substitui a rede e os Chromebooks de uma aula presencial.

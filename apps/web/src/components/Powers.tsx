@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ACTIVE_POWER_PHASES,
   POWER_IDS,
@@ -298,16 +298,23 @@ export function PowerTray({ now }: { now: number }) {
 export function PowerNotifications() {
   const { room, privateState } = useGame();
   const [queue, setQueue] = useState<PowerNotice[]>([]);
+  const queued = useRef({ key: '', lastId: 0 });
   const player = privateState?.kind === 'player' ? privateState : null;
   const key = room && player ? `impostor-ti.notices.${room.code}.${player.playerId}` : '';
   useEffect(() => {
     if (!key || !player) return;
-    const seen = Number(sessionStorage.getItem(key) ?? 0);
-    const fresh = player.notifications.filter((n) => n.id > seen);
+    if (queued.current.key !== key) {
+      queued.current = { key, lastId: Number(sessionStorage.getItem(key) ?? 0) };
+      setQueue([]);
+    }
+    const fresh = player.notifications.filter((n) => n.id > queued.current.lastId);
     if (!fresh.length) return;
-    sessionStorage.setItem(key, String(fresh.at(-1)!.id));
+    queued.current.lastId = fresh.at(-1)!.id;
     setQueue((old) => [...old, ...fresh].slice(-32));
   }, [key, player?.notifications]);
+  useEffect(() => {
+    if (key && queue[0]) sessionStorage.setItem(key, String(queue[0].id));
+  }, [key, queue[0]?.id]);
   useEffect(() => {
     if (!queue.length) return;
     const timer = setTimeout(() => setQueue((q) => q.slice(1)), 6500);

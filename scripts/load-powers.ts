@@ -167,6 +167,8 @@ async function collectClues() {
   await Promise.all(
     students.map(async (c, i) => {
       const p = state(c);
+      const participant = c.room!.players.find((player) => player.id === p.playerId);
+      if (!participant?.alive || participant.spectator) return;
       if (p.clueSubmitted || !p.clueDeadline || p.clueDeadline <= Date.now()) return;
       await c.send({ type: 'clue:submit', text: validClue(c, i) });
     }),

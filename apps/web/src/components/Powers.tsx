@@ -89,7 +89,7 @@ export function PowerPicker({
         ))}
       </div>
       {detail && (
-        <Modal title={POWERS[detail].name} onClose={() => setDetail(null)}>
+        <Modal className="power-dialog" title={POWERS[detail].name} onClose={() => setDetail(null)}>
           <div className="power-detail-icon">
             <PowerIcon id={detail} />
           </div>
@@ -260,7 +260,7 @@ export function PowerTray({ now }: { now: number }) {
         </div>
       )}
       {selected && def && slot && (
-        <Modal title={def.name} onClose={() => setSelected(null)}>
+        <Modal className="power-dialog" title={def.name} onClose={() => setSelected(null)}>
           <div className="power-detail-icon">
             <PowerIcon id={selected} />
           </div>

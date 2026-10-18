@@ -1027,7 +1027,7 @@ export class GameEngine {
       }
       case 'echo':
         to.fakeClue = fakeText;
-        message = `Uma dica falsa apareceu no nome de O jogador escolhido.`;
+        message = `Uma dica falsa apareceu no nome do jogador escolhido.`;
         targetMessage =
           'Uma dica falsa apareceu no seu nome. Envie sua dica verdadeira para substituí-la.';
         break;
@@ -1040,7 +1040,7 @@ export class GameEngine {
         to.clue = null;
         to.fakeClue = null;
         to.rewriteUntil = Math.max(now, e.silencedUntil) + effectMs;
-        message = `A dica de O jogador escolhido foi apagada. O alvo tem 20 segundos para reenviar.`;
+        message = `A dica do jogador escolhido foi apagada. O alvo tem 20 segundos para reenviar.`;
         targetMessage =
           'Sua dica foi apagada. Você tem 20 segundos para reenviar; se estiver silenciado, o prazo começa após o silêncio.';
         this.advanceClues(room);

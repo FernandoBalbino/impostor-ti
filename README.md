@@ -20,7 +20,7 @@ Um laboratório, uma palavra secreta, vinte poderes estratégicos, uma habilidad
 5. A coleta termina ao esgotar o prazo ou quando todos respondem. A votação só começa quando o professor clica em **Abrir votação**.
 6. Cada aluno vivo escolhe um suspeito e confirma um único voto secreto. Não pode votar em si mesmo. O professor encerra e revela a contagem.
 7. O mais votado é eliminado. Um empate permite um desempate controlado pelo professor entre os empatados. Todos os vivos votam, sem voto próprio. Novo empate ou ausência de votos não elimina ninguém.
-8. Se a partida continuar, o professor inicia outra rodada com a mesma palavra. Eliminados assistem sem dar dicas, votar ou ativar poderes. Civis vencem ao eliminar todos os impostores; impostores vencem quando igualam ou superam os civis vivos. Os aliados são sinalizados em vermelho somente para os impostores.
+8. Se a partida continuar, o professor inicia outra rodada com uma nova palavra. Os itens das categorias escolhidas não se repetem até esgotar o catálogo disponível; ao reiniciar o ciclo, a última palavra também não se repete imediatamente. Eliminados assistem sem dar dicas, votar ou ativar poderes. Civis vencem ao eliminar todos os impostores; impostores vencem quando igualam ou superam os civis vivos. Os aliados são sinalizados em vermelho somente para os impostores.
 
 O aluno pode confirmar **Pular voto**, inclusive no desempate. A abstenção confirma sua participação e não disputa a eliminação; só o total é divulgado após a apuração.
 

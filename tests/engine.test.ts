@@ -287,7 +287,7 @@ test('votação sem votos não elimina ninguém', async () => {
     s.engine.close();
   }
 });
-test('eliminar civil mantém impostor, palavra e partida; eliminado não age', async () => {
+test('eliminar civil mantém impostor e partida; próxima rodada troca a palavra e eliminado não age', async () => {
   const s = setup();
   try {
     await s.start();
@@ -296,7 +296,9 @@ test('eliminar civil mantém impostor, palavra e partida; eliminado não age', a
     assert.equal(s.room.phase, 'WAITING_FOR_NEXT_ROUND');
     assert.equal(s.room.result, null);
     s.command(s.teacher, { type: 'round:next' });
-    assert.equal(s.room.word!.id, word);
+    assert.notEqual(s.room.word!.id, word);
+    assert.equal((s.engine.privateState(s.room, s.players[0]) as any).word, null);
+    assert.equal((s.engine.privateState(s.room, s.players[2]) as any).word.id, s.room.word!.id);
     rejects(
       () => s.command(s.players[1], { type: 'clue:submit', text: 'Uma pista' }),
       'ELIMINATED',
@@ -315,6 +317,37 @@ test('eliminar civil mantém impostor, palavra e partida; eliminado não age', a
       s.engine.public(s.room).players.find((p) => p.id === s.players[1].playerId)!.alive,
       false,
     );
+  } finally {
+    s.engine.close();
+  }
+});
+test('rodadas esgotam a categoria antes de repetir e limpam a pista do item anterior', async () => {
+  const s = setup();
+  try {
+    s.room.settings.categories = ['Navegadores'];
+    await s.start();
+    const seen = new Set([s.room.word!.id]);
+    const total = CATALOG.filter((w) => w.categoria === 'Navegadores').length;
+    assert.ok(total > 1);
+    for (let round = 1; round <= total; round++) {
+      const previous = s.room.word!.id;
+      s.room.players[0].vestigeLetter = 'X';
+      s.closeClues();
+      s.command(s.teacher, { type: 'vote:open' });
+      s.command(s.teacher, { type: 'vote:close' });
+      await pause();
+      const next = { type: 'round:next', requestId: randomUUID() } as Command;
+      s.engine.execute(s.teacher, next);
+      assert.equal(s.room.word!.categoria, 'Navegadores');
+      assert.notEqual(s.room.word!.id, previous);
+      assert.equal((s.engine.privateState(s.room, s.players[0]) as any).vestigeLetter, null);
+      if (round < total) assert.ok(!seen.has(s.room.word!.id));
+      seen.add(s.room.word!.id);
+      const current = s.room.word!.id;
+      s.engine.execute(s.teacher, next);
+      assert.equal(s.room.word!.id, current);
+    }
+    assert.equal(seen.size, total);
   } finally {
     s.engine.close();
   }

@@ -112,6 +112,7 @@ export interface Room {
   result: PublicRoom['result'];
   updated: number;
   previousWordId?: string;
+  usedWordIds: Set<string>;
   requests: Map<string, Map<string, CommandResult>>;
 }
 export interface EngineOptions {
@@ -238,6 +239,7 @@ export class GameEngine {
       eliminations: [],
       result: null,
       updated: this.now(),
+      usedWordIds: new Set(),
       requests: new Map(),
     };
     this.rooms.set(code, room);
@@ -510,11 +512,7 @@ export class GameEngine {
             : null;
           player.vestigeLetter = null;
         }
-        const pool = CATALOG.filter(
-          (w) => room.settings.categories.includes(w.categoria) && w.id !== room.previousWordId,
-        );
-        room.word = { ...pool[randomInt(pool.length)] };
-        room.previousWordId = room.word.id;
+        this.drawWord(room);
         room.round = 1;
         room.phase = 'ROLE_REVEAL';
         this.schedule(room, this.options.revealMs ?? 6000, () => {
@@ -618,6 +616,7 @@ export class GameEngine {
       case 'round:next':
         this.teacher(room, auth);
         this.requirePhase(room, 'WAITING_FOR_NEXT_ROUND');
+        this.drawWord(room);
         room.round++;
         this.startClues(room);
         privateChanged = true;
@@ -686,6 +685,19 @@ export class GameEngine {
     room.requests.set(key, seen);
     this.touch(room, privateChanged);
     return result;
+  }
+  private drawWord(room: Room) {
+    const eligible = CATALOG.filter((w) => room.settings.categories.includes(w.categoria));
+    if (!eligible.length) fail('NO_WORDS', 'Selecione uma categoria com itens disponíveis.');
+    let pool = eligible.filter((w) => !room.usedWordIds.has(w.id));
+    if (!pool.length) {
+      room.usedWordIds.clear();
+      pool = eligible.filter((w) => w.id !== room.previousWordId);
+    }
+    room.word = { ...(pool.length ? pool : eligible)[randomInt(pool.length || eligible.length)] };
+    room.previousWordId = room.word.id;
+    room.usedWordIds.add(room.word.id);
+    for (const player of room.players) player.vestigeLetter = null;
   }
   private startClues(room: Room) {
     room.phase = 'CLUES';

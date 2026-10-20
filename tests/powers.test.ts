@@ -422,7 +422,8 @@ test('véu esconde só a imagem da próxima rodada e não revela papéis', async
   assert.deepEqual(s.state(1).effects.hiddenImageRounds, [2]);
   rejects(() => s.cast(2, 'veil', 1), 'EFFECT_ACTIVE');
   await s.next();
-  assert.equal(s.state(1).word!.nome, word);
+  assert.notEqual(s.state(1).word!.nome, word);
+  assert.deepEqual(s.state(1).effects.hiddenImageRounds, [2]);
   s.cast(2, 'veil', 1);
   assert.deepEqual(s.state(1).effects.hiddenImageRounds, [2, 3]);
   await s.next();
